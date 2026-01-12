@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      boxes: {
+        Row: {
+          area_m2: number | null
+          atividades: string | null
+          boxe: string
+          codigo: string
+          created_at: string
+          id: string
+          imagem_url: string | null
+          inquilino: string | null
+          setor: string | null
+          status: Database["public"]["Enums"]["box_status"]
+          updated_at: string
+        }
+        Insert: {
+          area_m2?: number | null
+          atividades?: string | null
+          boxe: string
+          codigo: string
+          created_at?: string
+          id?: string
+          imagem_url?: string | null
+          inquilino?: string | null
+          setor?: string | null
+          status?: Database["public"]["Enums"]["box_status"]
+          updated_at?: string
+        }
+        Update: {
+          area_m2?: number | null
+          atividades?: string | null
+          boxe?: string
+          codigo?: string
+          created_at?: string
+          id?: string
+          imagem_url?: string | null
+          inquilino?: string | null
+          setor?: string | null
+          status?: Database["public"]["Enums"]["box_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +64,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      box_status:
+        | "ASSINADO"
+        | "DISPONIVEL"
+        | "PROCESSO"
+        | "CANCELADO"
+        | "DESATIVADO"
+        | "DEVOLVIDO"
+        | "INTERDITADO"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +198,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      box_status: [
+        "ASSINADO",
+        "DISPONIVEL",
+        "PROCESSO",
+        "CANCELADO",
+        "DESATIVADO",
+        "DEVOLVIDO",
+        "INTERDITADO",
+      ],
+    },
   },
 } as const
