@@ -1,7 +1,29 @@
-import { FileText, ClipboardList, ChevronDown, Building2 } from "lucide-react";
+import { FileText, ClipboardList, ChevronDown, Building2, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Header = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  // Get user initials from email
+  const getInitials = (email: string | undefined) => {
+    if (!email) return 'U';
+    return email.charAt(0).toUpperCase();
+  };
+
   return (
     <header className="bg-header text-header-foreground h-16 flex items-center justify-between px-6">
       <div className="flex items-center gap-3">
@@ -22,14 +44,25 @@ export const Header = () => {
           <FileText size={18} />
           <span>Exportar PDF</span>
         </button>
-        <div className="flex items-center gap-2 cursor-pointer">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" />
-            <AvatarFallback>AD</AvatarFallback>
-          </Avatar>
-          <span className="font-medium">Admin</span>
-          <ChevronDown size={16} />
-        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src="" />
+                <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
+              </Avatar>
+              <span className="font-medium max-w-[150px] truncate">{user?.email || 'Usuário'}</span>
+              <ChevronDown size={16} />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Sair</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
