@@ -137,6 +137,7 @@ export type Database = {
           created_at: string
           descricao: string
           embalagem: string | null
+          estoque_minimo: number | null
           id: string
           qtd_atual: number | null
           updated_at: string
@@ -145,6 +146,7 @@ export type Database = {
           created_at?: string
           descricao: string
           embalagem?: string | null
+          estoque_minimo?: number | null
           id?: string
           qtd_atual?: number | null
           updated_at?: string
@@ -153,6 +155,7 @@ export type Database = {
           created_at?: string
           descricao?: string
           embalagem?: string | null
+          estoque_minimo?: number | null
           id?: string
           qtd_atual?: number | null
           updated_at?: string
