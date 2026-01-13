@@ -56,6 +56,109 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_entries: {
+        Row: {
+          created_at: string
+          data: string
+          embalagem: string | null
+          id: string
+          item_id: string
+          qtd: number
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          embalagem?: string | null
+          id?: string
+          item_id: string
+          qtd: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          embalagem?: string | null
+          id?: string
+          item_id?: string
+          qtd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_entries_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_exits: {
+        Row: {
+          created_at: string
+          data: string
+          embalagem: string | null
+          entregue_por: string | null
+          id: string
+          item_id: string
+          qtd: number
+          recebido_por: string | null
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          embalagem?: string | null
+          entregue_por?: string | null
+          id?: string
+          item_id: string
+          qtd: number
+          recebido_por?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          embalagem?: string | null
+          entregue_por?: string | null
+          id?: string
+          item_id?: string
+          qtd?: number
+          recebido_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_exits_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          created_at: string
+          descricao: string
+          embalagem: string | null
+          id: string
+          qtd_atual: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          embalagem?: string | null
+          id?: string
+          qtd_atual?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          embalagem?: string | null
+          id?: string
+          qtd_atual?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
