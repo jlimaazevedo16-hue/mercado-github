@@ -7,14 +7,22 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { Download } from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths, startOfYear, eachMonthOfInterval } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface ConsumoData {
   item_descricao: string;
   total_entradas: number;
   total_saidas: number;
   saldo: number;
+}
+
+interface ChartData {
+  month: string;
+  entradas: number;
+  saidas: number;
 }
 
 export const ConsumoReport = () => {
@@ -39,7 +47,7 @@ export const ConsumoReport = () => {
     queryFn: async () => {
       let query = supabase
         .from("inventory_entries")
-        .select("item_id, qtd, inventory_items(descricao)")
+        .select("item_id, qtd, data, inventory_items(descricao)")
         .gte("data", dataInicio)
         .lte("data", dataFim);
 
@@ -58,7 +66,7 @@ export const ConsumoReport = () => {
     queryFn: async () => {
       let query = supabase
         .from("inventory_exits")
-        .select("item_id, qtd, inventory_items(descricao)")
+        .select("item_id, qtd, data, inventory_items(descricao)")
         .gte("data", dataInicio)
         .lte("data", dataFim);
 
@@ -71,6 +79,66 @@ export const ConsumoReport = () => {
       return data;
     },
   });
+
+  // Monthly chart data (last 6 months)
+  const { data: chartEntries } = useQuery({
+    queryKey: ["inventory-entries-chart", selectedItem],
+    queryFn: async () => {
+      const sixMonthsAgo = format(startOfMonth(subMonths(new Date(), 5)), "yyyy-MM-dd");
+      let query = supabase
+        .from("inventory_entries")
+        .select("qtd, data")
+        .gte("data", sixMonthsAgo);
+
+      if (selectedItem !== "all") {
+        query = query.eq("item_id", selectedItem);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: chartExits } = useQuery({
+    queryKey: ["inventory-exits-chart", selectedItem],
+    queryFn: async () => {
+      const sixMonthsAgo = format(startOfMonth(subMonths(new Date(), 5)), "yyyy-MM-dd");
+      let query = supabase
+        .from("inventory_exits")
+        .select("qtd, data")
+        .gte("data", sixMonthsAgo);
+
+      if (selectedItem !== "all") {
+        query = query.eq("item_id", selectedItem);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const chartData: ChartData[] = (() => {
+    const months = eachMonthOfInterval({
+      start: startOfMonth(subMonths(new Date(), 5)),
+      end: endOfMonth(new Date()),
+    });
+
+    return months.map((month) => {
+      const monthStr = format(month, "yyyy-MM");
+      const monthLabel = format(month, "MMM/yy", { locale: ptBR });
+
+      const monthEntries = chartEntries?.filter((e: any) => e.data?.startsWith(monthStr)) || [];
+      const monthExits = chartExits?.filter((e: any) => e.data?.startsWith(monthStr)) || [];
+
+      return {
+        month: monthLabel,
+        entradas: monthEntries.reduce((sum: number, e: any) => sum + Number(e.qtd), 0),
+        saidas: monthExits.reduce((sum: number, e: any) => sum + Number(e.qtd), 0),
+      };
+    });
+  })();
 
   const consumoData: ConsumoData[] = (() => {
     const itemMap = new Map<string, { entradas: number; saidas: number; descricao: string }>();
@@ -105,6 +173,28 @@ export const ConsumoReport = () => {
     }),
     { entradas: 0, saidas: 0, saldo: 0 }
   );
+
+  const exportToCSV = () => {
+    const headers = ["Item", "Total Entradas", "Total Saídas", "Saldo"];
+    const rows = consumoData.map((item) => [
+      item.item_descricao,
+      item.total_entradas.toString(),
+      item.total_saidas.toString(),
+      item.saldo.toString(),
+    ]);
+    rows.push(["TOTAL", totals.entradas.toString(), totals.saidas.toString(), totals.saldo.toString()]);
+
+    const csvContent = [headers.join(";"), ...rows.map((row) => row.join(";"))].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `relatorio-consumo-${format(new Date(), "yyyy-MM-dd")}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
@@ -148,6 +238,31 @@ export const ConsumoReport = () => {
                 </SelectContent>
               </Select>
             </div>
+            <Button variant="outline" onClick={exportToCSV} disabled={consumoData.length === 0}>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Consumo Mensal (Últimos 6 meses)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="entradas" name="Entradas" fill="#22c55e" />
+                <Bar dataKey="saidas" name="Saídas" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
