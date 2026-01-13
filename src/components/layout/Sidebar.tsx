@@ -1,4 +1,5 @@
-import { LayoutDashboard, Package, Users, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   activeItem: string;
@@ -6,13 +7,21 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "boxes", label: "Boxes", icon: Package },
-  { id: "responsaveis", label: "Responsáveis", icon: Users },
-  { id: "documentos", label: "Documentos", icon: FileText },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { id: "boxes", label: "Boxes", icon: Package, path: "/" },
+  { id: "responsaveis", label: "Responsáveis", icon: Users, path: "/" },
+  { id: "documentos", label: "Documentos", icon: FileText, path: "/" },
+  { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado" },
 ];
 
 export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
+  const navigate = useNavigate();
+
+  const handleItemClick = (item: typeof menuItems[0]) => {
+    onItemClick(item.id);
+    navigate(item.path);
+  };
+
   return (
     <aside className="w-52 bg-sidebar text-sidebar-foreground flex flex-col min-h-screen">
       <nav className="flex-1 py-6">
@@ -23,7 +32,7 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onItemClick(item.id)}
+                  onClick={() => handleItemClick(item)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
