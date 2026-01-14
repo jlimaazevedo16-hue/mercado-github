@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -9,6 +9,7 @@ interface SidebarProps {
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { id: "boxes", label: "Boxes", icon: Package, path: "/" },
+  { id: "planta-baixa", label: "Planta Baixa", icon: Map, path: "/planta-baixa" },
   { id: "responsaveis", label: "Responsáveis", icon: Users, path: "/" },
   { id: "documentos", label: "Documentos", icon: FileText, path: "/" },
   { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado" },

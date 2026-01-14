@@ -6,6 +6,7 @@ import { ItemsCadastro } from "@/components/almoxarifado/ItemsCadastro";
 import { ItemsEntrada } from "@/components/almoxarifado/ItemsEntrada";
 import { ItemsSaida } from "@/components/almoxarifado/ItemsSaida";
 import { ConsumoReport } from "@/components/almoxarifado/ConsumoReport";
+import { AlmoxarifadoDashboard } from "@/components/almoxarifado/AlmoxarifadoDashboard";
 
 const Almoxarifado = () => {
   const [activeMenuItem, setActiveMenuItem] = useState("almoxarifado");
@@ -20,7 +21,9 @@ const Almoxarifado = () => {
         <main className="flex-1 p-6 overflow-auto">
           <h1 className="text-2xl font-bold mb-6">Almoxarifado</h1>
           
-          <Tabs defaultValue="cadastro" className="w-full">
+          <AlmoxarifadoDashboard />
+          
+          <Tabs defaultValue="cadastro" className="w-full mt-6">
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="cadastro">Cadastro de Itens</TabsTrigger>
               <TabsTrigger value="entrada">Entrada</TabsTrigger>
