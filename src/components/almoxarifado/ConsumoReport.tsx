@@ -7,10 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download } from "lucide-react";
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear, eachMonthOfInterval } from "date-fns";
+import { Download, FileText } from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 interface ConsumoData {
   item_descricao: string;
@@ -174,6 +177,46 @@ export const ConsumoReport = () => {
     { entradas: 0, saidas: 0, saldo: 0 }
   );
 
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Título
+      doc.setFontSize(18);
+      doc.text("Relatório de Consumo - Almoxarifado", 14, 22);
+      
+      // Período
+      doc.setFontSize(10);
+      doc.text(`Período: ${format(new Date(dataInicio), "dd/MM/yyyy")} a ${format(new Date(dataFim), "dd/MM/yyyy")}`, 14, 32);
+      doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`, 14, 38);
+      
+      // Tabela
+      const tableData = consumoData.map((item) => [
+        item.item_descricao,
+        item.total_entradas.toString(),
+        item.total_saidas.toString(),
+        item.saldo.toString(),
+      ]);
+      tableData.push(["TOTAL", totals.entradas.toString(), totals.saidas.toString(), totals.saldo.toString()]);
+
+      autoTable(doc, {
+        head: [["Item", "Total Entradas", "Total Saídas", "Saldo"]],
+        body: tableData,
+        startY: 45,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [59, 130, 246] },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        footStyles: { fillColor: [229, 231, 235], fontStyle: "bold" },
+      });
+
+      doc.save(`relatorio-consumo-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao gerar PDF");
+      console.error(error);
+    }
+  };
+
   const exportToCSV = () => {
     const headers = ["Item", "Total Entradas", "Total Saídas", "Saldo"];
     const rows = consumoData.map((item) => [
@@ -238,6 +281,10 @@ export const ConsumoReport = () => {
                 </SelectContent>
               </Select>
             </div>
+            <Button variant="outline" onClick={exportToPDF} disabled={consumoData.length === 0}>
+              <FileText className="w-4 h-4 mr-2" />
+              Exportar PDF
+            </Button>
             <Button variant="outline" onClick={exportToCSV} disabled={consumoData.length === 0}>
               <Download className="w-4 h-4 mr-2" />
               Exportar CSV
