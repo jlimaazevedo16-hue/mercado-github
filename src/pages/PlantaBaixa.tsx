@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Upload, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { BoxDetailsDialog } from "@/components/planta-baixa/BoxDetailsDialog";
+import { Tables } from "@/integrations/supabase/types";
 
 const statusColors: Record<string, { bg: string; text: string; glow: string }> = {
   ASSINADO: { bg: "bg-green-500", text: "text-green-100", glow: "shadow-green-500/50" },
@@ -26,6 +28,8 @@ const PlantaBaixa = () => {
   const [zoom, setZoom] = useState(1);
   const [plantaImage, setPlantaImage] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedBox, setSelectedBox] = useState<Tables<"boxes"> | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: boxes } = useQuery({
     queryKey: ["boxes-planta"],
@@ -58,6 +62,11 @@ const PlantaBaixa = () => {
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
   const handleResetZoom = () => setZoom(1);
+
+  const handleBoxClick = (box: Tables<"boxes">) => {
+    setSelectedBox(box);
+    setDialogOpen(true);
+  };
 
   const filteredBoxes = selectedStatus
     ? boxes?.filter((box) => box.status === selectedStatus)
@@ -190,8 +199,8 @@ const PlantaBaixa = () => {
                           return (
                             <div
                               key={box.id}
+                              onClick={() => handleBoxClick(box)}
                               className={`relative w-20 h-20 rounded-lg ${colors.bg} shadow-lg ${colors.glow} flex flex-col items-center justify-center transition-all hover:scale-110 cursor-pointer`}
-                              title={`${box.codigo} - ${box.boxe}\n${box.inquilino || "Sem inquilino"}`}
                             >
                               <span className={`text-xs font-bold ${colors.text}`}>{box.codigo}</span>
                               <span className={`text-[10px] ${colors.text} opacity-80 truncate max-w-full px-1`}>
@@ -201,7 +210,7 @@ const PlantaBaixa = () => {
                           );
                         })}
                       </div>
-                      <p className="text-sm mb-2">Visualização simplificada dos boxes</p>
+                      <p className="text-sm mb-2">Clique em um box para ver detalhes</p>
                       <p className="text-xs">Carregue uma imagem da planta baixa para visualização completa</p>
                     </div>
                   )}
@@ -225,7 +234,8 @@ const PlantaBaixa = () => {
                     return (
                       <div
                         key={box.id}
-                        className={`p-3 rounded-lg ${colors.bg} ${colors.glow} shadow-lg`}
+                        onClick={() => handleBoxClick(box)}
+                        className={`p-3 rounded-lg ${colors.bg} ${colors.glow} shadow-lg cursor-pointer hover:scale-105 transition-transform`}
                       >
                         <p className={`font-bold ${colors.text}`}>{box.codigo}</p>
                         <p className={`text-xs ${colors.text} opacity-80 truncate`}>{box.boxe}</p>
@@ -243,6 +253,13 @@ const PlantaBaixa = () => {
           )}
         </main>
       </div>
+
+      <BoxDetailsDialog 
+        box={selectedBox} 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen}
+        isAdmin={false}
+      />
     </div>
   );
 };
