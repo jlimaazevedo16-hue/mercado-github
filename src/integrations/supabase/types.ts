@@ -14,6 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
+      box_documents: {
+        Row: {
+          arquivo_url: string | null
+          box_id: string
+          created_at: string
+          data_emissao: string | null
+          data_validade: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          arquivo_url?: string | null
+          box_id: string
+          created_at?: string
+          data_emissao?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arquivo_url?: string | null
+          box_id?: string
+          created_at?: string
+          data_emissao?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_documents_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      box_history: {
+        Row: {
+          box_id: string
+          campo: string
+          created_at: string
+          id: string
+          usuario_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          box_id: string
+          campo: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          box_id?: string
+          campo?: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_history_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      box_maintenances: {
+        Row: {
+          box_id: string
+          created_at: string
+          custo: number | null
+          data_execucao: string | null
+          data_solicitacao: string
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          responsavel: string | null
+          status: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          box_id: string
+          created_at?: string
+          custo?: number | null
+          data_execucao?: string | null
+          data_solicitacao?: string
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          responsavel?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          box_id?: string
+          created_at?: string
+          custo?: number | null
+          data_execucao?: string | null
+          data_solicitacao?: string
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          responsavel?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_maintenances_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boxes: {
         Row: {
           area_m2: number | null
@@ -24,6 +162,11 @@ export type Database = {
           id: string
           imagem_url: string | null
           inquilino: string | null
+          planta_height: number | null
+          planta_width: number | null
+          pos_x: number | null
+          pos_y: number | null
+          responsavel_id: string | null
           setor: string | null
           status: Database["public"]["Enums"]["box_status"]
           updated_at: string
@@ -37,6 +180,11 @@ export type Database = {
           id?: string
           imagem_url?: string | null
           inquilino?: string | null
+          planta_height?: number | null
+          planta_width?: number | null
+          pos_x?: number | null
+          pos_y?: number | null
+          responsavel_id?: string | null
           setor?: string | null
           status?: Database["public"]["Enums"]["box_status"]
           updated_at?: string
@@ -50,11 +198,24 @@ export type Database = {
           id?: string
           imagem_url?: string | null
           inquilino?: string | null
+          planta_height?: number | null
+          planta_width?: number | null
+          pos_x?: number | null
+          pos_y?: number | null
+          responsavel_id?: string | null
           setor?: string | null
           status?: Database["public"]["Enums"]["box_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "boxes_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_entries: {
         Row: {
@@ -161,6 +322,151 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      responsaveis: {
+        Row: {
+          cep: string | null
+          cidade: string | null
+          cpf: string | null
+          created_at: string
+          data_nascimento: string | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          imagem_url: string | null
+          nome: string
+          observacoes: string | null
+          rg: string | null
+          status: string | null
+          telefone: string | null
+          telefone_secundario: string | null
+          updated_at: string
+        }
+        Insert: {
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome: string
+          observacoes?: string | null
+          rg?: string | null
+          status?: string | null
+          telefone?: string | null
+          telefone_secundario?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome?: string
+          observacoes?: string | null
+          rg?: string | null
+          status?: string | null
+          telefone?: string | null
+          telefone_secundario?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      responsavel_documents: {
+        Row: {
+          arquivo_url: string | null
+          created_at: string
+          data_emissao: string | null
+          data_validade: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          responsavel_id: string
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          responsavel_id: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          responsavel_id?: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsavel_documents_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responsavel_history: {
+        Row: {
+          campo: string
+          created_at: string
+          id: string
+          responsavel_id: string
+          usuario_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          campo: string
+          created_at?: string
+          id?: string
+          responsavel_id: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          campo?: string
+          created_at?: string
+          id?: string
+          responsavel_id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsavel_history_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
