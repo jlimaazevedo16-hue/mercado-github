@@ -1,4 +1,4 @@
-import { FileText, ClipboardList, ChevronDown, Building2, LogOut } from "lucide-react";
+import { FileText, ClipboardList, ChevronDown, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import logo from "@/assets/logo_associacao.jpeg";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
@@ -27,12 +28,11 @@ export const Header = () => {
   return (
     <header className="bg-header text-header-foreground h-16 flex items-center justify-between px-6">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Building2 size={28} />
-          <span className="text-xl font-bold">Mercado Municipal Digital</span>
+        <img src={logo} alt="Logo" className="h-12 w-auto rounded" />
+        <div className="flex flex-col">
+          <span className="text-lg font-bold leading-tight">Mercado Municipal Digital</span>
+          <span className="text-xs text-header-foreground/70">Gestão de Permissionários</span>
         </div>
-        <span className="text-header-foreground/60 px-2">|</span>
-        <span className="text-header-foreground/80">Gestão de Permissionários</span>
       </div>
       
       <div className="flex items-center gap-6">
