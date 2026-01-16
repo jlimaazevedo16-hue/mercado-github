@@ -13,6 +13,7 @@ import PlantaBaixa from "./pages/PlantaBaixa";
 import BoxFicha from "./pages/BoxFicha";
 import ResponsavelFicha from "./pages/ResponsavelFicha";
 import Responsaveis from "./pages/Responsaveis";
+import ObservatorioComerciazacao from "./pages/ObservatorioComerciazacao";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/boxes/:id" element={<BoxFicha />} />
             <Route path="/responsaveis" element={<Responsaveis />} />
             <Route path="/responsaveis/:id" element={<ResponsavelFicha />} />
+            <Route path="/observatorio" element={<ObservatorioComerciazacao />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
