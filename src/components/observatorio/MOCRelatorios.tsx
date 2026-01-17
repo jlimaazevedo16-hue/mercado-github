@@ -58,9 +58,9 @@ export const MOCRelatorios = () => {
 
   // Aplicar filtros
   const registrosFiltrados = registros.filter(r => {
-    const matchSegmento = !filtroSegmento || r.moc_produtos?.segmento === filtroSegmento;
-    const matchFamilia = !filtroFamilia || r.moc_produtos?.familia === filtroFamilia;
-    const matchDestinacao = !filtroDestinacao || r.destinacao === filtroDestinacao;
+    const matchSegmento = !filtroSegmento || filtroSegmento === 'all' || r.moc_produtos?.segmento === filtroSegmento;
+    const matchFamilia = !filtroFamilia || filtroFamilia === 'all' || r.moc_produtos?.familia === filtroFamilia;
+    const matchDestinacao = !filtroDestinacao || filtroDestinacao === 'all' || r.destinacao === filtroDestinacao;
     return matchSegmento && matchFamilia && matchDestinacao;
   });
 
@@ -185,7 +185,7 @@ export const MOCRelatorios = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="Pescado">Pescado</SelectItem>
                   <SelectItem value="Carne">Carne</SelectItem>
                   <SelectItem value="Hortifruti">Hortifruti</SelectItem>
@@ -200,7 +200,7 @@ export const MOCRelatorios = () => {
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   {familias.map(fam => (
                     <SelectItem key={fam} value={fam}>{fam}</SelectItem>
                   ))}
@@ -215,7 +215,7 @@ export const MOCRelatorios = () => {
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="Revenda Local">Revenda Local</SelectItem>
                   <SelectItem value="Exportação">Exportação</SelectItem>
                   <SelectItem value="Consumidor Final">Consumidor Final</SelectItem>

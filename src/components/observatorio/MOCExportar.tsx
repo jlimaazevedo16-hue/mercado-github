@@ -35,7 +35,7 @@ export const MOCExportar = () => {
         .lte('data_coleta', dataFim)
         .order('data_coleta', { ascending: true });
       
-      if (filtroSegmento) {
+      if (filtroSegmento && filtroSegmento !== 'all') {
         query = query.eq('moc_produtos.segmento', filtroSegmento);
       }
 
@@ -43,7 +43,7 @@ export const MOCExportar = () => {
       if (error) throw error;
       
       // Filtrar se segmento foi selecionado
-      if (filtroSegmento) {
+      if (filtroSegmento && filtroSegmento !== 'all') {
         return (data || []).filter(r => r.moc_produtos?.segmento === filtroSegmento);
       }
       return data || [];
@@ -249,7 +249,7 @@ export const MOCExportar = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="Pescado">Pescado</SelectItem>
                   <SelectItem value="Carne">Carne</SelectItem>
                   <SelectItem value="Hortifruti">Hortifruti</SelectItem>
