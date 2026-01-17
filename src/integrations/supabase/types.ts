@@ -323,6 +323,109 @@ export type Database = {
         }
         Relationships: []
       }
+      moc_produtos: {
+        Row: {
+          created_at: string
+          familia: string | null
+          id: string
+          nome_cientifico: string | null
+          nome_popular: string
+          segmento: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          familia?: string | null
+          id?: string
+          nome_cientifico?: string | null
+          nome_popular: string
+          segmento: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          familia?: string | null
+          id?: string
+          nome_cientifico?: string | null
+          nome_popular?: string
+          segmento?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      moc_registros: {
+        Row: {
+          box_id: string | null
+          created_at: string
+          data_coleta: string
+          destinacao: string
+          estado_produto: string
+          id: string
+          observacoes: string | null
+          origem_comunidade: string | null
+          origem_municipio: string | null
+          origem_rio: string | null
+          produto_id: string
+          quantidade_kg: number
+          responsavel_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          box_id?: string | null
+          created_at?: string
+          data_coleta?: string
+          destinacao: string
+          estado_produto: string
+          id?: string
+          observacoes?: string | null
+          origem_comunidade?: string | null
+          origem_municipio?: string | null
+          origem_rio?: string | null
+          produto_id: string
+          quantidade_kg: number
+          responsavel_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          box_id?: string | null
+          created_at?: string
+          data_coleta?: string
+          destinacao?: string
+          estado_produto?: string
+          id?: string
+          observacoes?: string | null
+          origem_comunidade?: string | null
+          origem_municipio?: string | null
+          origem_rio?: string | null
+          produto_id?: string
+          quantidade_kg?: number
+          responsavel_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moc_registros_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moc_registros_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "moc_produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moc_registros_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       responsaveis: {
         Row: {
           cep: string | null
