@@ -55,7 +55,7 @@ export const MOCProdutos = () => {
   });
 
   const produtosFiltrados = produtos.filter(p => {
-    const matchSegmento = !filtroSegmento || p.segmento === filtroSegmento;
+    const matchSegmento = !filtroSegmento || filtroSegmento === 'all' || p.segmento === filtroSegmento;
     const matchBusca = !busca || 
       p.nome_popular?.toLowerCase().includes(busca.toLowerCase()) ||
       p.nome_cientifico?.toLowerCase().includes(busca.toLowerCase()) ||
@@ -236,7 +236,7 @@ export const MOCProdutos = () => {
               <SelectValue placeholder="Todos segmentos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               {SEGMENTOS.map(seg => (
                 <SelectItem key={seg} value={seg}>{seg}</SelectItem>
               ))}
