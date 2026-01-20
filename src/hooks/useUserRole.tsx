@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'administrador' | 'fiscal' | 'funcionario';
+type AppRole = 'administrador_master' | 'administrador' | 'fiscal' | 'funcionario' | 'lojista';
 
 interface Permission {
   permission_key: string;
@@ -15,6 +15,7 @@ interface UserRoleContextType {
   permissions: Permission[];
   loading: boolean;
   isAdmin: boolean;
+  isAdminMaster: boolean;
   hasPermission: (key: string, action?: 'view' | 'edit') => boolean;
   refetch: () => Promise<void>;
 }
@@ -73,6 +74,9 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const hasPermission = (key: string, action: 'view' | 'edit' = 'view'): boolean => {
+    // Admin master has full access to everything
+    if (role === 'administrador_master') return true;
+    
     const perm = permissions.find(p => p.permission_key === key);
     if (!perm) return false;
     return action === 'view' ? perm.can_view : perm.can_edit;
@@ -84,7 +88,8 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
         role, 
         permissions, 
         loading, 
-        isAdmin: role === 'administrador',
+        isAdmin: role === 'administrador' || role === 'administrador_master',
+        isAdminMaster: role === 'administrador_master',
         hasPermission,
         refetch: fetchRoleAndPermissions
       }}

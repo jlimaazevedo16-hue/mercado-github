@@ -1,6 +1,8 @@
-import { FileText, ClipboardList, ChevronDown, LogOut } from "lucide-react";
+import { FileText, ClipboardList, ChevronDown, LogOut, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -12,6 +14,7 @@ import logo from "@/assets/logo_associacao.jpeg";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
+  const { role, isAdminMaster } = useUserRole();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -19,10 +22,27 @@ export const Header = () => {
     navigate('/login');
   };
 
-  // Get user initials from email
   const getInitials = (email: string | undefined) => {
     if (!email) return 'U';
     return email.charAt(0).toUpperCase();
+  };
+
+  const getRoleBadge = () => {
+    if (isAdminMaster) {
+      return (
+        <Badge className="bg-amber-500 text-white flex items-center gap-1">
+          <Shield className="h-3 w-3" />
+          Administrador Master
+        </Badge>
+      );
+    }
+    if (role === 'administrador') {
+      return <Badge variant="default">Administrador</Badge>;
+    }
+    if (role === 'fiscal') {
+      return <Badge variant="secondary">Fiscal</Badge>;
+    }
+    return null;
   };
 
   return (
@@ -52,7 +72,10 @@ export const Header = () => {
                 <AvatarImage src="" />
                 <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
               </Avatar>
-              <span className="font-medium max-w-[150px] truncate">{user?.email || 'Usuário'}</span>
+              <div className="flex flex-col items-start">
+                <span className="font-medium max-w-[150px] truncate text-sm">{user?.email || 'Usuário'}</span>
+                {getRoleBadge()}
+              </div>
               <ChevronDown size={16} />
             </div>
           </DropdownMenuTrigger>

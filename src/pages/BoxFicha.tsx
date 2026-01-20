@@ -14,9 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   ArrowLeft, Save, FileText, Wrench, History, Plus, 
-  Calendar, User, MapPin, Building2, Trash2, Edit2 
+  Calendar, User, MapPin, Building2, Trash2, Edit2, AlertTriangle 
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -25,6 +26,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialog";
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
+import { PhotoUpload } from "@/components/shared/PhotoUpload";
+import { BoxNotificacoesPAD } from "@/components/box/BoxNotificacoesPAD";
 
 const statusOptions = [
   "ASSINADO", "DISPONIVEL", "PROCESSO", "CANCELADO", 
@@ -148,6 +151,7 @@ const BoxFicha = () => {
           atividades: data.atividades,
           status: data.status,
           responsavel_id: data.responsavel_id || null,
+          imagem_url: data.imagem_url || null,
         })
         .eq("id", id);
       
@@ -304,10 +308,14 @@ const BoxFicha = () => {
           </div>
 
           <Tabs defaultValue="dados" className="space-y-4">
-            <TabsList>
+            <TabsList className="flex-wrap">
               <TabsTrigger value="dados" className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
                 Dados Gerais
+              </TabsTrigger>
+              <TabsTrigger value="notificacoes" className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Notificações / PAD
               </TabsTrigger>
               <TabsTrigger value="documentos" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
@@ -324,7 +332,54 @@ const BoxFicha = () => {
             </TabsList>
 
             <TabsContent value="dados">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Photo Card */}
+                <Card className="lg:row-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Foto do Box</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <PhotoUpload
+                      currentPhotoUrl={formData.imagem_url}
+                      onPhotoChange={(url) => setFormData({ ...formData, imagem_url: url })}
+                      isEditing={isEditing}
+                      entityType="box"
+                      entityId={id}
+                      entityName={box.boxe}
+                      size="lg"
+                    />
+                    
+                    {/* Responsável Photo Section */}
+                    {(box as any).responsaveis && (
+                      <div className="mt-6 pt-6 border-t w-full">
+                        <p className="text-sm font-medium text-center mb-4">Responsável Vinculado</p>
+                        <div className="flex flex-col items-center gap-2">
+                          <Avatar className="h-20 w-20 border-2 border-muted">
+                            {(box as any).responsaveis.imagem_url ? (
+                              <AvatarImage 
+                                src={(box as any).responsaveis.imagem_url} 
+                                alt={(box as any).responsaveis.nome}
+                                className="object-cover"
+                              />
+                            ) : null}
+                            <AvatarFallback className="bg-muted text-muted-foreground text-lg">
+                              <User className="h-8 w-8" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <p className="font-medium text-center">{(box as any).responsaveis.nome}</p>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => navigate(`/responsaveis/${(box as any).responsaveis.id}`)}
+                          >
+                            Ver ficha completa
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Informações Básicas</CardTitle>
@@ -485,6 +540,10 @@ const BoxFicha = () => {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            <TabsContent value="notificacoes">
+              <BoxNotificacoesPAD boxId={id || ""} boxCodigo={box.codigo} />
             </TabsContent>
 
             <TabsContent value="documentos">
