@@ -475,8 +475,10 @@ export type Database = {
           descricao_infracao: string
           fiscal_id: string | null
           id: string
+          numero_auto_externo: string | null
           numero_interno: string | null
           observacoes: string | null
+          orgao_fiscalizador: string | null
           prazo_adequacao: string | null
           prazo_defesa: string | null
           responsavel_id: string | null
@@ -493,8 +495,10 @@ export type Database = {
           descricao_infracao: string
           fiscal_id?: string | null
           id?: string
+          numero_auto_externo?: string | null
           numero_interno?: string | null
           observacoes?: string | null
+          orgao_fiscalizador?: string | null
           prazo_adequacao?: string | null
           prazo_defesa?: string | null
           responsavel_id?: string | null
@@ -511,8 +515,10 @@ export type Database = {
           descricao_infracao?: string
           fiscal_id?: string | null
           id?: string
+          numero_auto_externo?: string | null
           numero_interno?: string | null
           observacoes?: string | null
+          orgao_fiscalizador?: string | null
           prazo_adequacao?: string | null
           prazo_defesa?: string | null
           responsavel_id?: string | null

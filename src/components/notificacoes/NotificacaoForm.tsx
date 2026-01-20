@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, FileWarning, Save } from 'lucide-react';
+import { CalendarIcon, FileWarning, Save, Building2 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -31,6 +31,20 @@ const artigos = [
   { value: 'outro', label: 'Outro artigo' },
 ];
 
+const orgaosFiscalizadores = [
+  { value: 'IPEM', label: 'IPEM/INMETRO' },
+  { value: 'VISA', label: 'Vigilância Sanitária' },
+  { value: 'IBAMA', label: 'IBAMA' },
+  { value: 'ICMBio', label: 'ICMBio' },
+  { value: 'BOMBEIROS', label: 'Corpo de Bombeiros' },
+  { value: 'PREFEITURA', label: 'Prefeitura Municipal' },
+  { value: 'PROCON', label: 'PROCON' },
+  { value: 'MP', label: 'Ministério Público' },
+  { value: 'POLICIA', label: 'Polícia Civil/Militar' },
+  { value: 'RECEITA', label: 'Receita Federal/Estadual' },
+  { value: 'OUTRO', label: 'Outro órgão' },
+];
+
 export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
   const queryClient = useQueryClient();
   const { logAction } = useAuditLog();
@@ -47,6 +61,10 @@ export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
     prazo_defesa: addDays(new Date(), 15),
     prazo_adequacao: addDays(new Date(), 30),
     observacoes: '',
+    // Campos para notificação externa
+    orgao_fiscalizador: '',
+    orgao_fiscalizador_outro: '',
+    numero_auto_externo: '',
   });
 
   const { data: boxes } = useQuery({
@@ -87,6 +105,11 @@ export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
         ? formData.artigo_outro 
         : artigos.find(a => a.value === formData.artigo_violado)?.label || formData.artigo_violado;
 
+      // Determinar órgão fiscalizador final
+      const orgaoFinal = formData.orgao_fiscalizador === 'OUTRO'
+        ? formData.orgao_fiscalizador_outro
+        : orgaosFiscalizadores.find(o => o.value === formData.orgao_fiscalizador)?.label || formData.orgao_fiscalizador;
+
       const insertData: any = {
         tipo: formData.tipo,
         box_id: formData.box_id || null,
@@ -103,6 +126,12 @@ export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
       
       if (numeroInterno) {
         insertData.numero_interno = numeroInterno;
+      }
+
+      // Campos para notificação externa
+      if (formData.tipo === 'externa') {
+        insertData.orgao_fiscalizador = orgaoFinal || null;
+        insertData.numero_auto_externo = formData.numero_auto_externo || null;
       }
 
       const { data, error } = await supabase
@@ -139,10 +168,26 @@ export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
     }
   };
 
+  const handleTipoChange = (tipo: 'interna' | 'externa') => {
+    setFormData({ 
+      ...formData, 
+      tipo,
+      // Limpar campos de externa quando mudar para interna
+      orgao_fiscalizador: '',
+      orgao_fiscalizador_outro: '',
+      numero_auto_externo: '',
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.artigo_violado || !formData.descricao_infracao || !formData.classificacao) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+    // Validação adicional para notificação externa
+    if (formData.tipo === 'externa' && (!formData.orgao_fiscalizador || !formData.numero_auto_externo)) {
+      toast.error('Para notificações externas, informe o órgão fiscalizador e o número do auto');
       return;
     }
     createNotificacaoMutation.mutate();
@@ -164,18 +209,64 @@ export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
               <Label>Tipo de Notificação *</Label>
               <Select
                 value={formData.tipo}
-                onValueChange={(v: 'interna' | 'externa') => 
-                  setFormData({ ...formData, tipo: v })}
+                onValueChange={handleTipoChange}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="interna">Interna (numeração automática)</SelectItem>
-                  <SelectItem value="externa">Externa</SelectItem>
+                  <SelectItem value="externa">Externa (órgão fiscalizador)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Campos para Notificação Externa */}
+            {formData.tipo === 'externa' && (
+              <>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Órgão Fiscalizador *
+                  </Label>
+                  <Select
+                    value={formData.orgao_fiscalizador}
+                    onValueChange={(v) => setFormData({ ...formData, orgao_fiscalizador: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o órgão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {orgaosFiscalizadores.map((orgao) => (
+                        <SelectItem key={orgao.value} value={orgao.value}>
+                          {orgao.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.orgao_fiscalizador === 'OUTRO' && (
+                  <div className="space-y-2">
+                    <Label>Nome do Órgão *</Label>
+                    <Input
+                      value={formData.orgao_fiscalizador_outro}
+                      onChange={(e) => setFormData({ ...formData, orgao_fiscalizador_outro: e.target.value })}
+                      placeholder="Ex: Secretaria de Meio Ambiente"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>Número do Auto de Infração *</Label>
+                  <Input
+                    value={formData.numero_auto_externo}
+                    onChange={(e) => setFormData({ ...formData, numero_auto_externo: e.target.value })}
+                    placeholder="Ex: AI-2026-00458"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Box */}
             <div className="space-y-2">
