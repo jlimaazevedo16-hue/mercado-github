@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { PendingIndicators } from "./PendingIndicators";
 
 export interface Box {
   id: string;
@@ -101,6 +102,7 @@ export const BoxTable = ({ boxes, onSelectBox, selectedBoxId, isLoading }: BoxTa
             <TableHead className="font-semibold">Setor</TableHead>
             <TableHead className="font-semibold">Inquilino</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">Pendências</TableHead>
             <TableHead className="font-semibold">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -125,6 +127,9 @@ export const BoxTable = ({ boxes, onSelectBox, selectedBoxId, isLoading }: BoxTa
                 <Badge variant={getStatusBadgeVariant(box.status)}>
                   {getStatusLabel(box.status)}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                <PendingIndicators boxId={box.id} />
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
