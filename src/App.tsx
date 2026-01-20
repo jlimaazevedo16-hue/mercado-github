@@ -20,6 +20,8 @@ import GestaoUsuarios from "./pages/GestaoUsuarios";
 import Notificacoes from "./pages/Notificacoes";
 import Pendencias from "./pages/Pendencias";
 import Configuracoes from "./pages/Configuracoes";
+import Frequencia from "./pages/Frequencia";
+import DashboardFinanceiro from "./pages/DashboardFinanceiro";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,8 @@ const App = () => (
               <Route path="/notificacoes" element={<ProtectedRoute requiredPermission="notificacoes"><Notificacoes /></ProtectedRoute>} />
               <Route path="/pendencias" element={<ProtectedRoute requiredPermission="pendencias"><Pendencias /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="configuracoes"><Configuracoes /></ProtectedRoute>} />
+              <Route path="/frequencia" element={<ProtectedRoute requiredPermission="frequencia"><Frequencia /></ProtectedRoute>} />
+              <Route path="/financeiro" element={<ProtectedRoute requiredPermission="configuracoes"><DashboardFinanceiro /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
