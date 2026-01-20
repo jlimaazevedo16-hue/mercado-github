@@ -499,7 +499,6 @@ export const PADDetalhes = ({ padId, onBack }: PADDetalhesProps) => {
                   created_at: d.created_at,
                 })) || []}
                 onDelete={handleDeleteDocument}
-                bucketName="documents"
               />
             </CardContent>
           </Card>
@@ -507,7 +506,7 @@ export const PADDetalhes = ({ padId, onBack }: PADDetalhesProps) => {
           <DocumentUploadDialog
             open={showUploadDialog}
             onOpenChange={setShowUploadDialog}
-            onUpload={handleDocumentUpload}
+            onUploadComplete={handleDocumentUpload}
             entityType="box"
             entityId={padId}
           />
