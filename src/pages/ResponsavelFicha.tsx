@@ -178,20 +178,37 @@ const ResponsavelFicha = () => {
   });
 
   const addDocumentMutation = useMutation({
-    mutationFn: async (doc: any) => {
+    mutationFn: async (doc: {
+      nome: string;
+      tipo: string;
+      descricao: string;
+      data_emissao: string;
+      data_validade: string;
+      arquivo_url: string;
+    }) => {
       const { error } = await supabase
         .from("responsavel_documents")
-        .insert({ ...doc, responsavel_id: id });
+        .insert({ 
+          ...doc, 
+          responsavel_id: id,
+          data_emissao: doc.data_emissao || null,
+          data_validade: doc.data_validade || null,
+        });
       if (error) throw error;
+      
+      logAction({
+        action: 'CREATE_DOCUMENT',
+        tableName: 'responsavel_documents',
+        recordId: id,
+        newValues: { nome: doc.nome, tipo: doc.tipo }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["responsavel-documents", id] });
-      setNewDocument({ nome: "", tipo: "", descricao: "", data_emissao: "", data_validade: "" });
       setDocDialogOpen(false);
-      toast.success("Documento adicionado!");
     },
     onError: () => {
-      toast.error("Erro ao adicionar documento.");
+      toast.error("Erro ao salvar documento. Verifique se está autenticado.");
     },
   });
 
@@ -579,125 +596,27 @@ const ResponsavelFicha = () => {
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                       <CardTitle>Documentos</CardTitle>
-                      <Dialog open={docDialogOpen} onOpenChange={setDocDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Adicionar Documento
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Novo Documento</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label>Nome do Documento</Label>
-                              <Input
-                                value={newDocument.nome}
-                                onChange={(e) => setNewDocument({ ...newDocument, nome: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label>Tipo</Label>
-                              <Select
-                                value={newDocument.tipo}
-                                onValueChange={(value) => setNewDocument({ ...newDocument, tipo: value })}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione o tipo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="RG">RG</SelectItem>
-                                  <SelectItem value="CPF">CPF</SelectItem>
-                                  <SelectItem value="Comprovante de Residência">Comprovante de Residência</SelectItem>
-                                  <SelectItem value="Certidão">Certidão</SelectItem>
-                                  <SelectItem value="Contrato">Contrato</SelectItem>
-                                  <SelectItem value="Outro">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label>Descrição</Label>
-                              <Textarea
-                                value={newDocument.descricao}
-                                onChange={(e) => setNewDocument({ ...newDocument, descricao: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Data de Emissão</Label>
-                                <Input
-                                  type="date"
-                                  value={newDocument.data_emissao}
-                                  onChange={(e) => setNewDocument({ ...newDocument, data_emissao: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label>Data de Validade</Label>
-                                <Input
-                                  type="date"
-                                  value={newDocument.data_validade}
-                                  onChange={(e) => setNewDocument({ ...newDocument, data_validade: e.target.value })}
-                                />
-                              </div>
-                            </div>
-                            <Button 
-                              className="w-full" 
-                              onClick={() => addDocumentMutation.mutate(newDocument)}
-                              disabled={!newDocument.nome}
-                            >
-                              Adicionar
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <Button size="sm" onClick={() => setDocDialogOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Documento
+                      </Button>
                     </CardHeader>
                     <CardContent>
-                      {documents && documents.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Nome</TableHead>
-                              <TableHead>Tipo</TableHead>
-                              <TableHead>Emissão</TableHead>
-                              <TableHead>Validade</TableHead>
-                              <TableHead>Ações</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {documents.map((doc) => (
-                              <TableRow key={doc.id}>
-                                <TableCell className="font-medium">{doc.nome}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{doc.tipo || "—"}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {doc.data_emissao ? format(new Date(doc.data_emissao), "dd/MM/yyyy") : "—"}
-                                </TableCell>
-                                <TableCell>
-                                  {doc.data_validade ? format(new Date(doc.data_validade), "dd/MM/yyyy") : "—"}
-                                </TableCell>
-                                <TableCell>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => deleteDocumentMutation.mutate(doc.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <p className="text-center text-muted-foreground py-8">
-                          Nenhum documento cadastrado
-                        </p>
-                      )}
+                      <DocumentsTable 
+                        documents={documents || []}
+                        onDelete={(docId) => deleteDocumentMutation.mutate(docId)}
+                        isDeleting={deleteDocumentMutation.isPending}
+                      />
                     </CardContent>
                   </Card>
+                  
+                  <DocumentUploadDialog
+                    open={docDialogOpen}
+                    onOpenChange={setDocDialogOpen}
+                    onUploadComplete={(docData) => addDocumentMutation.mutate(docData)}
+                    entityType="responsavel"
+                    entityId={id || ""}
+                  />
                 </TabsContent>
 
                 <TabsContent value="historico">
