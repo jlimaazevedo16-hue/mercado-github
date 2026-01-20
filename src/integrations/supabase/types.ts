@@ -984,6 +984,106 @@ export type Database = {
           },
         ]
       }
+      reuniao_presencas: {
+        Row: {
+          box_id: string | null
+          created_at: string
+          hora_chegada: string | null
+          id: string
+          observacoes: string | null
+          presente: boolean | null
+          responsavel_id: string
+          reuniao_id: string
+        }
+        Insert: {
+          box_id?: string | null
+          created_at?: string
+          hora_chegada?: string | null
+          id?: string
+          observacoes?: string | null
+          presente?: boolean | null
+          responsavel_id: string
+          reuniao_id: string
+        }
+        Update: {
+          box_id?: string | null
+          created_at?: string
+          hora_chegada?: string | null
+          id?: string
+          observacoes?: string | null
+          presente?: boolean | null
+          responsavel_id?: string
+          reuniao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reuniao_presencas_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reuniao_presencas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reuniao_presencas_reuniao_id_fkey"
+            columns: ["reuniao_id"]
+            isOneToOne: false
+            referencedRelation: "reunioes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reunioes: {
+        Row: {
+          ata: string | null
+          created_at: string
+          data_evento: string
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          local: string | null
+          pauta: string | null
+          status: string | null
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ata?: string | null
+          created_at?: string
+          data_evento?: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          local?: string | null
+          pauta?: string | null
+          status?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ata?: string | null
+          created_at?: string
+          data_evento?: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          local?: string | null
+          pauta?: string | null
+          status?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           can_edit: boolean | null

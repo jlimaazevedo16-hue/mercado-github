@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calculator } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calculator, Calendar, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -14,8 +14,10 @@ const menuItems = [
   { id: "documentos", label: "Documentos", icon: FileText, path: "/", permission: "documentos" },
   { id: "pendencias", label: "Pendências", icon: Bell, path: "/pendencias", permission: "pendencias" },
   { id: "notificacoes", label: "Notificações/PAD", icon: AlertTriangle, path: "/notificacoes", permission: "notificacoes" },
+  { id: "frequencia", label: "Frequência", icon: Calendar, path: "/frequencia", permission: "frequencia" },
   { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado", permission: "almoxarifado" },
   { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
+  { id: "financeiro", label: "Financeiro", icon: DollarSign, path: "/financeiro", permission: "configuracoes" },
   { id: "configuracoes", label: "Configurações", icon: Calculator, path: "/configuracoes", permission: "configuracoes" },
   { id: "gestao-usuarios", label: "Gestão de Usuários", icon: Settings, path: "/gestao-usuarios", permission: "gestao_usuarios" },
 ];
