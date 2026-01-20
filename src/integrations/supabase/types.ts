@@ -256,6 +256,75 @@ export type Database = {
           },
         ]
       }
+      configuracoes_administrativas: {
+        Row: {
+          chave: string
+          created_at: string
+          descricao: string | null
+          id: string
+          unidade: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          unidade?: string | null
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          unidade?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      extracoes_mensais: {
+        Row: {
+          arquivo_url: string | null
+          created_at: string
+          data_geracao: string
+          gerado_por: string | null
+          id: string
+          mes_referencia: string
+          total_boxes: number | null
+          valor_total_aluguel: number | null
+          valor_total_condominio: number | null
+          valor_total_multas: number | null
+        }
+        Insert: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_geracao?: string
+          gerado_por?: string | null
+          id?: string
+          mes_referencia: string
+          total_boxes?: number | null
+          valor_total_aluguel?: number | null
+          valor_total_condominio?: number | null
+          valor_total_multas?: number | null
+        }
+        Update: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_geracao?: string
+          gerado_por?: string | null
+          id?: string
+          mes_referencia?: string
+          total_boxes?: number | null
+          valor_total_aluguel?: number | null
+          valor_total_condominio?: number | null
+          valor_total_multas?: number | null
+        }
+        Relationships: []
+      }
       inventory_entries: {
         Row: {
           created_at: string
