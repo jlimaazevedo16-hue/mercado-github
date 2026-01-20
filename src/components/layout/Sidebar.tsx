@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calculator } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ const menuItems = [
   { id: "notificacoes", label: "Notificações/PAD", icon: AlertTriangle, path: "/notificacoes", permission: "notificacoes" },
   { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado", permission: "almoxarifado" },
   { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
+  { id: "configuracoes", label: "Configurações", icon: Calculator, path: "/configuracoes", permission: "configuracoes" },
   { id: "gestao-usuarios", label: "Gestão de Usuários", icon: Settings, path: "/gestao-usuarios", permission: "gestao_usuarios" },
 ];
 
@@ -52,12 +53,6 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
           })}
         </ul>
       </nav>
-      <div className="px-3 pb-6">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent/50 transition-colors">
-          <Settings size={20} />
-          <span className="font-medium">Configurações</span>
-        </button>
-      </div>
     </aside>
   );
 };

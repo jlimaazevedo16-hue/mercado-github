@@ -19,6 +19,7 @@ import ObservatorioComerciazacao from "./pages/ObservatorioComerciazacao";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import Notificacoes from "./pages/Notificacoes";
 import Pendencias from "./pages/Pendencias";
+import Configuracoes from "./pages/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/gestao-usuarios" element={<ProtectedRoute requiredPermission="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />
               <Route path="/notificacoes" element={<ProtectedRoute requiredPermission="notificacoes"><Notificacoes /></ProtectedRoute>} />
               <Route path="/pendencias" element={<ProtectedRoute requiredPermission="pendencias"><Pendencias /></ProtectedRoute>} />
+              <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="configuracoes"><Configuracoes /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
