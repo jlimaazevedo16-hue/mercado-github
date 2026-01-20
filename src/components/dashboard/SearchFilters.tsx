@@ -1,37 +1,86 @@
-import { Search, ChevronDown, Plus } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export const SearchFilters = () => {
+interface SearchFiltersProps {
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  statusFilter: string;
+  onStatusChange: (value: string) => void;
+  setorFilter: string;
+  onSetorChange: (value: string) => void;
+  setores: string[];
+  onNewBox?: () => void;
+}
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "Todos os Status" },
+  { value: "ASSINADO", label: "Assinado" },
+  { value: "DISPONIVEL", label: "Disponível" },
+  { value: "PROCESSO", label: "Em Processo" },
+  { value: "CANCELADO", label: "Cancelado" },
+  { value: "DESATIVADO", label: "Desativado" },
+  { value: "DEVOLVIDO", label: "Devolvido" },
+  { value: "INTERDITADO", label: "Interditado" },
+];
+
+export const SearchFilters = ({
+  searchTerm,
+  onSearchChange,
+  statusFilter,
+  onStatusChange,
+  setorFilter,
+  onSetorChange,
+  setores,
+  onNewBox,
+}: SearchFiltersProps) => {
   return (
     <div className="flex items-center gap-3 bg-card p-4 rounded-lg shadow-sm">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
         <Input 
-          placeholder="Buscar por número do box ou CPF" 
+          placeholder="Buscar por código, box ou inquilino..." 
           className="pl-10 bg-background border-input"
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
       
-      <Button variant="outline" className="flex items-center gap-2">
-        Bloco
-        <ChevronDown size={16} />
-      </Button>
+      <Select value={setorFilter} onValueChange={onSetorChange}>
+        <SelectTrigger className="w-[160px]">
+          <SelectValue placeholder="Setor" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os Setores</SelectItem>
+          {setores.map((setor) => (
+            <SelectItem key={setor} value={setor}>{setor}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       
-      <Button variant="outline" className="flex items-center gap-2">
-        Segmento
-        <ChevronDown size={16} />
-      </Button>
+      <Select value={statusFilter} onValueChange={onStatusChange}>
+        <SelectTrigger className="w-[160px]">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       
-      <Button variant="outline" className="flex items-center gap-2">
-        Status
-        <ChevronDown size={16} />
-      </Button>
-      
-      <Button className="flex items-center gap-2 bg-status-available hover:bg-status-available/90 text-white">
-        <Plus size={18} />
-        Novo Box
-      </Button>
+      {onNewBox && (
+        <Button 
+          className="flex items-center gap-2 bg-status-available hover:bg-status-available/90 text-white"
+          onClick={onNewBox}
+        >
+          <Plus size={18} />
+          Novo Box
+        </Button>
+      )}
     </div>
   );
 };
