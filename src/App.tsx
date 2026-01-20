@@ -17,6 +17,7 @@ import ResponsavelFicha from "./pages/ResponsavelFicha";
 import Responsaveis from "./pages/Responsaveis";
 import ObservatorioComerciazacao from "./pages/ObservatorioComerciazacao";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
+import Notificacoes from "./pages/Notificacoes";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/responsaveis/:id" element={<ProtectedRoute requiredPermission="responsaveis"><ResponsavelFicha /></ProtectedRoute>} />
               <Route path="/observatorio" element={<ProtectedRoute requiredPermission="observatorio"><ObservatorioComerciazacao /></ProtectedRoute>} />
               <Route path="/gestao-usuarios" element={<ProtectedRoute requiredPermission="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />
+              <Route path="/notificacoes" element={<ProtectedRoute requiredPermission="notificacoes"><Notificacoes /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

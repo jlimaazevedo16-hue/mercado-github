@@ -465,6 +465,275 @@ export type Database = {
           },
         ]
       }
+      notificacoes: {
+        Row: {
+          artigo_violado: string
+          box_id: string | null
+          classificacao: Database["public"]["Enums"]["infraction_classification"]
+          created_at: string
+          data_notificacao: string
+          descricao_infracao: string
+          fiscal_id: string | null
+          id: string
+          numero_interno: string | null
+          observacoes: string | null
+          prazo_adequacao: string | null
+          prazo_defesa: string | null
+          responsavel_id: string | null
+          status: string | null
+          tipo: Database["public"]["Enums"]["notification_type"]
+          updated_at: string
+        }
+        Insert: {
+          artigo_violado: string
+          box_id?: string | null
+          classificacao: Database["public"]["Enums"]["infraction_classification"]
+          created_at?: string
+          data_notificacao?: string
+          descricao_infracao: string
+          fiscal_id?: string | null
+          id?: string
+          numero_interno?: string | null
+          observacoes?: string | null
+          prazo_adequacao?: string | null
+          prazo_defesa?: string | null
+          responsavel_id?: string | null
+          status?: string | null
+          tipo: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+        }
+        Update: {
+          artigo_violado?: string
+          box_id?: string | null
+          classificacao?: Database["public"]["Enums"]["infraction_classification"]
+          created_at?: string
+          data_notificacao?: string
+          descricao_infracao?: string
+          fiscal_id?: string | null
+          id?: string
+          numero_interno?: string | null
+          observacoes?: string | null
+          prazo_adequacao?: string | null
+          prazo_defesa?: string | null
+          responsavel_id?: string | null
+          status?: string | null
+          tipo?: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_sequence: {
+        Row: {
+          ano: number
+          created_at: string
+          id: string
+          ultimo_numero: number
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          id?: string
+          ultimo_numero?: number
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          id?: string
+          ultimo_numero?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pad_documents: {
+        Row: {
+          arquivo_url: string | null
+          created_at: string
+          data_upload: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          pad_id: string
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_upload?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          pad_id: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_upload?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          pad_id?: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pad_documents_pad_id_fkey"
+            columns: ["pad_id"]
+            isOneToOne: false
+            referencedRelation: "pads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pad_etapas: {
+        Row: {
+          created_at: string
+          data_etapa: string
+          descricao: string | null
+          documento_url: string | null
+          etapa: Database["public"]["Enums"]["pad_status"]
+          id: string
+          pad_id: string
+          responsavel_etapa: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_etapa?: string
+          descricao?: string | null
+          documento_url?: string | null
+          etapa: Database["public"]["Enums"]["pad_status"]
+          id?: string
+          pad_id: string
+          responsavel_etapa?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_etapa?: string
+          descricao?: string | null
+          documento_url?: string | null
+          etapa?: Database["public"]["Enums"]["pad_status"]
+          id?: string
+          pad_id?: string
+          responsavel_etapa?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pad_etapas_pad_id_fkey"
+            columns: ["pad_id"]
+            isOneToOne: false
+            referencedRelation: "pads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pads: {
+        Row: {
+          box_id: string | null
+          created_at: string
+          data_autuacao: string
+          data_decisao_final: string | null
+          data_defesa: string | null
+          data_julgamento: string | null
+          data_recurso: string | null
+          decisao_final: string | null
+          fundamentacao: string | null
+          id: string
+          notificacao_id: string
+          numero_processo: string
+          percentual_multa: number | null
+          relator: string | null
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["pad_status"]
+          taxa_condominio_base: number | null
+          updated_at: string
+          valor_multa: number | null
+        }
+        Insert: {
+          box_id?: string | null
+          created_at?: string
+          data_autuacao?: string
+          data_decisao_final?: string | null
+          data_defesa?: string | null
+          data_julgamento?: string | null
+          data_recurso?: string | null
+          decisao_final?: string | null
+          fundamentacao?: string | null
+          id?: string
+          notificacao_id: string
+          numero_processo: string
+          percentual_multa?: number | null
+          relator?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["pad_status"]
+          taxa_condominio_base?: number | null
+          updated_at?: string
+          valor_multa?: number | null
+        }
+        Update: {
+          box_id?: string | null
+          created_at?: string
+          data_autuacao?: string
+          data_decisao_final?: string | null
+          data_defesa?: string | null
+          data_julgamento?: string | null
+          data_recurso?: string | null
+          decisao_final?: string | null
+          fundamentacao?: string | null
+          id?: string
+          notificacao_id?: string
+          numero_processo?: string
+          percentual_multa?: number | null
+          relator?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["pad_status"]
+          taxa_condominio_base?: number | null
+          updated_at?: string
+          valor_multa?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pads_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pads_notificacao_id_fkey"
+            columns: ["notificacao_id"]
+            isOneToOne: false
+            referencedRelation: "notificacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pads_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean | null
@@ -696,6 +965,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_notification_number: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -722,6 +992,15 @@ export type Database = {
         | "DESATIVADO"
         | "DEVOLVIDO"
         | "INTERDITADO"
+      infraction_classification: "leve" | "media" | "grave" | "gravissima"
+      notification_type: "interna" | "externa"
+      pad_status:
+        | "autuacao"
+        | "defesa"
+        | "julgamento"
+        | "recurso"
+        | "decisao_final"
+        | "arquivado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -858,6 +1137,16 @@ export const Constants = {
         "DESATIVADO",
         "DEVOLVIDO",
         "INTERDITADO",
+      ],
+      infraction_classification: ["leve", "media", "grave", "gravissima"],
+      notification_type: ["interna", "externa"],
+      pad_status: [
+        "autuacao",
+        "defesa",
+        "julgamento",
+        "recurso",
+        "decisao_final",
+        "arquivado",
       ],
     },
   },
