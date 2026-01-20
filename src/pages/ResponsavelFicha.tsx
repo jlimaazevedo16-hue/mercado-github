@@ -13,25 +13,27 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   ArrowLeft, Save, FileText, History, Plus, 
-  Calendar, User, Phone, Mail, MapPin, Trash2, Edit2, Package
+  Calendar, User, Phone, Mail, MapPin, Edit2, Package
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuditLog } from "@/hooks/useAuditLog";
+import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialog";
+import { DocumentsTable } from "@/components/documents/DocumentsTable";
 
 const ResponsavelFicha = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { logAction } = useAuditLog();
   const [activeMenuItem, setActiveMenuItem] = useState("responsaveis");
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
-  const [newDocument, setNewDocument] = useState({ nome: "", tipo: "", descricao: "", data_emissao: "", data_validade: "" });
   const [docDialogOpen, setDocDialogOpen] = useState(false);
   const isNew = id === "novo";
 

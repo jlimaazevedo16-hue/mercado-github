@@ -22,6 +22,9 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuditLog } from "@/hooks/useAuditLog";
+import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialog";
+import { DocumentsTable } from "@/components/documents/DocumentsTable";
 
 const statusOptions = [
   "ASSINADO", "DISPONIVEL", "PROCESSO", "CANCELADO", 
@@ -33,10 +36,10 @@ const BoxFicha = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { logAction } = useAuditLog();
   const [activeMenuItem, setActiveMenuItem] = useState("boxes");
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
-  const [newDocument, setNewDocument] = useState({ nome: "", tipo: "", descricao: "", data_emissao: "", data_validade: "" });
   const [newMaintenance, setNewMaintenance] = useState({ tipo: "", descricao: "", data_solicitacao: "", responsavel: "", custo: "" });
   const [docDialogOpen, setDocDialogOpen] = useState(false);
   const [maintDialogOpen, setMaintDialogOpen] = useState(false);
@@ -170,20 +173,37 @@ const BoxFicha = () => {
   });
 
   const addDocumentMutation = useMutation({
-    mutationFn: async (doc: any) => {
+    mutationFn: async (doc: {
+      nome: string;
+      tipo: string;
+      descricao: string;
+      data_emissao: string;
+      data_validade: string;
+      arquivo_url: string;
+    }) => {
       const { error } = await supabase
         .from("box_documents")
-        .insert({ ...doc, box_id: id });
+        .insert({ 
+          ...doc, 
+          box_id: id,
+          data_emissao: doc.data_emissao || null,
+          data_validade: doc.data_validade || null,
+        });
       if (error) throw error;
+      
+      logAction({
+        action: 'CREATE_DOCUMENT',
+        tableName: 'box_documents',
+        recordId: id,
+        newValues: { nome: doc.nome, tipo: doc.tipo }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["box-documents", id] });
-      setNewDocument({ nome: "", tipo: "", descricao: "", data_emissao: "", data_validade: "" });
       setDocDialogOpen(false);
-      toast.success("Documento adicionado!");
     },
     onError: () => {
-      toast.error("Erro ao adicionar documento. Verifique se está autenticado.");
+      toast.error("Erro ao salvar documento. Verifique se está autenticado.");
     },
   });
 
@@ -471,124 +491,27 @@ const BoxFicha = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Documentos</CardTitle>
-                  <Dialog open={docDialogOpen} onOpenChange={setDocDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Documento
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Novo Documento</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Nome do Documento</Label>
-                          <Input
-                            value={newDocument.nome}
-                            onChange={(e) => setNewDocument({ ...newDocument, nome: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Tipo</Label>
-                          <Select
-                            value={newDocument.tipo}
-                            onValueChange={(value) => setNewDocument({ ...newDocument, tipo: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Contrato">Contrato</SelectItem>
-                              <SelectItem value="Alvará">Alvará</SelectItem>
-                              <SelectItem value="Licença">Licença</SelectItem>
-                              <SelectItem value="Comprovante">Comprovante</SelectItem>
-                              <SelectItem value="Outro">Outro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Descrição</Label>
-                          <Textarea
-                            value={newDocument.descricao}
-                            onChange={(e) => setNewDocument({ ...newDocument, descricao: e.target.value })}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label>Data de Emissão</Label>
-                            <Input
-                              type="date"
-                              value={newDocument.data_emissao}
-                              onChange={(e) => setNewDocument({ ...newDocument, data_emissao: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <Label>Data de Validade</Label>
-                            <Input
-                              type="date"
-                              value={newDocument.data_validade}
-                              onChange={(e) => setNewDocument({ ...newDocument, data_validade: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <Button 
-                          className="w-full" 
-                          onClick={() => addDocumentMutation.mutate(newDocument)}
-                          disabled={!newDocument.nome}
-                        >
-                          Adicionar
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button size="sm" onClick={() => setDocDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Documento
+                  </Button>
                 </CardHeader>
                 <CardContent>
-                  {documents && documents.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Nome</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Emissão</TableHead>
-                          <TableHead>Validade</TableHead>
-                          <TableHead>Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {documents.map((doc) => (
-                          <TableRow key={doc.id}>
-                            <TableCell className="font-medium">{doc.nome}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{doc.tipo || "—"}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {doc.data_emissao ? format(new Date(doc.data_emissao), "dd/MM/yyyy") : "—"}
-                            </TableCell>
-                            <TableCell>
-                              {doc.data_validade ? format(new Date(doc.data_validade), "dd/MM/yyyy") : "—"}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteDocumentMutation.mutate(doc.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-8">
-                      Nenhum documento cadastrado
-                    </p>
-                  )}
+                  <DocumentsTable 
+                    documents={documents || []}
+                    onDelete={(docId) => deleteDocumentMutation.mutate(docId)}
+                    isDeleting={deleteDocumentMutation.isPending}
+                  />
                 </CardContent>
               </Card>
+              
+              <DocumentUploadDialog
+                open={docDialogOpen}
+                onOpenChange={setDocDialogOpen}
+                onUploadComplete={(docData) => addDocumentMutation.mutate(docData)}
+                entityType="box"
+                entityId={id || ""}
+              />
             </TabsContent>
 
             <TabsContent value="manutencoes">
