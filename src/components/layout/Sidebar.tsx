@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -12,6 +12,7 @@ const menuItems = [
   { id: "planta-baixa", label: "Planta Baixa", icon: Map, path: "/planta-baixa", permission: "planta_baixa" },
   { id: "responsaveis", label: "Responsáveis", icon: Users, path: "/responsaveis", permission: "responsaveis" },
   { id: "documentos", label: "Documentos", icon: FileText, path: "/", permission: "documentos" },
+  { id: "pendencias", label: "Pendências", icon: Bell, path: "/pendencias", permission: "pendencias" },
   { id: "notificacoes", label: "Notificações/PAD", icon: AlertTriangle, path: "/notificacoes", permission: "notificacoes" },
   { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado", permission: "almoxarifado" },
   { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
