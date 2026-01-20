@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialog";
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
+import { PhotoUpload } from "@/components/shared/PhotoUpload";
 
 const ResponsavelFicha = () => {
   const { id } = useParams();
@@ -154,6 +155,7 @@ const ResponsavelFicha = () => {
           cep: data.cep,
           observacoes: data.observacoes,
           status: data.status,
+          imagem_url: data.imagem_url || null,
         })
         .eq("id", id);
       
@@ -313,7 +315,28 @@ const ResponsavelFicha = () => {
             </TabsList>
 
             <TabsContent value="dados">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Photo Card */}
+                <Card className="lg:row-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Foto do Responsável</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <PhotoUpload
+                      currentPhotoUrl={formData.imagem_url}
+                      onPhotoChange={(url) => setFormData({ ...formData, imagem_url: url })}
+                      isEditing={isEditing}
+                      entityType="responsavel"
+                      entityId={id}
+                      entityName={formData.nome}
+                      size="lg"
+                    />
+                    <p className="text-sm text-muted-foreground text-center mt-4">
+                      Foto para identificação administrativa
+                    </p>
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Informações Pessoais</CardTitle>

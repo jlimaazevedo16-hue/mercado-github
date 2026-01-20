@@ -1156,9 +1156,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_master: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "administrador" | "fiscal" | "funcionario"
+      app_role:
+        | "administrador"
+        | "fiscal"
+        | "funcionario"
+        | "administrador_master"
+        | "lojista"
       box_status:
         | "ASSINADO"
         | "DISPONIVEL"
@@ -1303,7 +1309,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["administrador", "fiscal", "funcionario"],
+      app_role: [
+        "administrador",
+        "fiscal",
+        "funcionario",
+        "administrador_master",
+        "lojista",
+      ],
       box_status: [
         "ASSINADO",
         "DISPONIVEL",
