@@ -7,13 +7,14 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { id: "boxes", label: "Boxes", icon: Package, path: "/" },
-  { id: "planta-baixa", label: "Planta Baixa", icon: Map, path: "/planta-baixa" },
-  { id: "responsaveis", label: "Responsáveis", icon: Users, path: "/responsaveis" },
-  { id: "documentos", label: "Documentos", icon: FileText, path: "/" },
-  { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado" },
-  { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio" },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/", permission: "dashboard" },
+  { id: "boxes", label: "Boxes", icon: Package, path: "/", permission: "boxes" },
+  { id: "planta-baixa", label: "Planta Baixa", icon: Map, path: "/planta-baixa", permission: "planta_baixa" },
+  { id: "responsaveis", label: "Responsáveis", icon: Users, path: "/responsaveis", permission: "responsaveis" },
+  { id: "documentos", label: "Documentos", icon: FileText, path: "/", permission: "documentos" },
+  { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado", permission: "almoxarifado" },
+  { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
+  { id: "gestao-usuarios", label: "Gestão de Usuários", icon: Settings, path: "/gestao-usuarios", permission: "gestao_usuarios" },
 ];
 
 export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
