@@ -47,18 +47,25 @@ const BoxFicha = () => {
   const [docDialogOpen, setDocDialogOpen] = useState(false);
   const [maintDialogOpen, setMaintDialogOpen] = useState(false);
 
-  const { data: box, isLoading } = useQuery({
+  const { data: box, isLoading, isError, error } = useQuery({
     queryKey: ["box", id],
     queryFn: async () => {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!id || !uuidRegex.test(id)) {
+        return null;
+      }
+      
       const { data, error } = await supabase
         .from("boxes")
         .select("*, responsaveis(*)")
         .eq("id", id)
-        .single();
+        .maybeSingle();
+      
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && id !== "novo",
   });
 
   const { data: documents } = useQuery({
@@ -262,11 +269,37 @@ const BoxFicha = () => {
   });
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center">Carregando...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando dados do box...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive font-medium mb-2">Erro ao carregar box</p>
+          <p className="text-muted-foreground text-sm mb-4">{(error as Error)?.message || "Erro desconhecido"}</p>
+          <Button variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
+        </div>
+      </div>
+    );
   }
 
   if (!box) {
-    return <div className="flex min-h-screen items-center justify-center">Box não encontrado</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Box não encontrado</p>
+          <Button variant="outline" onClick={() => navigate("/")}>Voltar ao Dashboard</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
