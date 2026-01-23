@@ -58,7 +58,12 @@ const BoxFicha = () => {
       
       const { data, error } = await supabase
         .from("boxes")
-        .select("*, responsaveis(*)")
+        .select(`
+          *,
+          responsaveis(*),
+          setores(id, nome, mercado),
+          segmentos(id, nome)
+        `)
         .eq("id", id)
         .maybeSingle();
       
@@ -123,6 +128,30 @@ const BoxFicha = () => {
     },
   });
 
+  const { data: setoresList } = useQuery({
+    queryKey: ["setores-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("setores")
+        .select("id, nome, mercado")
+        .order("nome");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: segmentosList } = useQuery({
+    queryKey: ["segmentos-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("segmentos")
+        .select("id, nome")
+        .order("nome");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   useEffect(() => {
     if (box) {
       setFormData(box);
@@ -134,8 +163,9 @@ const BoxFicha = () => {
       // Track changes for history
       const changes: any[] = [];
       if (box) {
+        const excludedKeys = ['updated_at', 'responsaveis', 'setores', 'segmentos'];
         Object.keys(data).forEach(key => {
-          if (box[key] !== data[key] && key !== 'updated_at' && key !== 'responsaveis') {
+          if (box[key] !== data[key] && !excludedKeys.includes(key)) {
             changes.push({
               box_id: id,
               campo: key,
@@ -152,7 +182,8 @@ const BoxFicha = () => {
         .update({
           codigo: data.codigo,
           boxe: data.boxe,
-          setor: data.setor,
+          setor_id: data.setor_id || null,
+          segmento_id: data.segmento_id || null,
           inquilino: data.inquilino,
           area_m2: data.area_m2,
           atividades: data.atividades,
@@ -447,26 +478,62 @@ const BoxFicha = () => {
                       <div>
                         <Label>Setor</Label>
                         {isEditing ? (
-                          <Input
-                            value={formData.setor || ""}
-                            onChange={(e) => setFormData({ ...formData, setor: e.target.value })}
-                          />
+                          <Select
+                            value={formData.setor_id || ""}
+                            onValueChange={(value) => setFormData({ ...formData, setor_id: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um setor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Nenhum</SelectItem>
+                              {setoresList?.map((setor) => (
+                                <SelectItem key={setor.id} value={setor.id}>
+                                  {setor.nome} {setor.mercado ? `(${setor.mercado})` : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         ) : (
-                          <p className="text-muted-foreground">{box.setor || "—"}</p>
+                          <p className="text-muted-foreground">{(box as any).setores?.nome || "—"}</p>
                         )}
                       </div>
                       <div>
-                        <Label>Área (m²)</Label>
+                        <Label>Segmento</Label>
                         {isEditing ? (
-                          <Input
-                            type="number"
-                            value={formData.area_m2 || ""}
-                            onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
-                          />
+                          <Select
+                            value={formData.segmento_id || ""}
+                            onValueChange={(value) => setFormData({ ...formData, segmento_id: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um segmento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Nenhum</SelectItem>
+                              {segmentosList?.map((segmento) => (
+                                <SelectItem key={segmento.id} value={segmento.id}>
+                                  {segmento.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         ) : (
-                          <p className="text-muted-foreground">{box.area_m2 ? `${box.area_m2} m²` : "—"}</p>
+                          <p className="text-muted-foreground">{(box as any).segmentos?.nome || "—"}</p>
                         )}
                       </div>
+                    </div>
+
+                    <div>
+                      <Label>Área (m²)</Label>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={formData.area_m2 || ""}
+                          onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
+                        />
+                      ) : (
+                        <p className="text-muted-foreground">{box.area_m2 ? `${box.area_m2} m²` : "—"}</p>
+                      )}
                     </div>
 
                     <div>

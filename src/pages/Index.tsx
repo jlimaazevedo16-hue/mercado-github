@@ -27,10 +27,11 @@ const Index = () => {
           id,
           codigo,
           boxe,
-          setor,
           inquilino,
           status,
           area_m2,
+          setores ( id, nome, mercado ),
+          segmentos ( id, nome ),
           responsaveis (nome)
         `)
         .order("codigo");
@@ -41,7 +42,9 @@ const Index = () => {
         id: box.id,
         codigo: box.codigo,
         boxe: box.boxe,
-        setor: box.setor,
+        setor_nome: (box.setores as any)?.nome || null,
+        setor_mercado: (box.setores as any)?.mercado || null,
+        segmento_nome: (box.segmentos as any)?.nome || null,
         inquilino: box.inquilino,
         status: box.status,
         area_m2: box.area_m2,
@@ -54,7 +57,7 @@ const Index = () => {
   const setores = useMemo(() => {
     const uniqueSetores = new Set<string>();
     boxesData?.forEach(box => {
-      if (box.setor) uniqueSetores.add(box.setor);
+      if (box.setor_nome) uniqueSetores.add(box.setor_nome);
     });
     return Array.from(uniqueSetores).sort();
   }, [boxesData]);
@@ -69,13 +72,15 @@ const Index = () => {
         box.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         box.boxe?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         box.inquilino?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        box.setor_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        box.segmento_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         box.responsavel_nome?.toLowerCase().includes(searchTerm.toLowerCase());
 
       // Status filter
       const matchesStatus = statusFilter === "all" || box.status === statusFilter;
 
       // Setor filter
-      const matchesSetor = setorFilter === "all" || box.setor === setorFilter;
+      const matchesSetor = setorFilter === "all" || box.setor_nome === setorFilter;
 
       return matchesSearch && matchesStatus && matchesSetor;
     });
@@ -118,8 +123,8 @@ const Index = () => {
               box={{
                 id: selectedBox.codigo,
                 bloco: selectedBox.boxe,
-                tipo: selectedBox.setor || "Box",
-                segmento: selectedBox.setor || undefined,
+                tipo: selectedBox.setor_nome || "Box",
+                segmento: selectedBox.segmento_nome || undefined,
                 area: undefined,
                 status: selectedBox.status === "ASSINADO" ? "Ativo" : 
                         selectedBox.status === "DISPONIVEL" ? "Disponível" :
