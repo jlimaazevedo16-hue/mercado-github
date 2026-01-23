@@ -206,7 +206,9 @@ export type Database = {
           pos_x: number | null
           pos_y: number | null
           responsavel_id: string | null
+          segmento_id: string | null
           setor: string | null
+          setor_id: string | null
           status: Database["public"]["Enums"]["box_status"]
           updated_at: string
         }
@@ -224,7 +226,9 @@ export type Database = {
           pos_x?: number | null
           pos_y?: number | null
           responsavel_id?: string | null
+          segmento_id?: string | null
           setor?: string | null
+          setor_id?: string | null
           status?: Database["public"]["Enums"]["box_status"]
           updated_at?: string
         }
@@ -242,7 +246,9 @@ export type Database = {
           pos_x?: number | null
           pos_y?: number | null
           responsavel_id?: string | null
+          segmento_id?: string | null
           setor?: string | null
+          setor_id?: string | null
           status?: Database["public"]["Enums"]["box_status"]
           updated_at?: string
         }
@@ -252,6 +258,20 @@ export type Database = {
             columns: ["responsavel_id"]
             isOneToOne: false
             referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boxes_segmento_id_fkey"
+            columns: ["segmento_id"]
+            isOneToOne: false
+            referencedRelation: "segmentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boxes_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
             referencedColumns: ["id"]
           },
         ]
@@ -1108,6 +1128,51 @@ export type Database = {
           id?: string
           permission_key?: string
           role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      segmentos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      setores: {
+        Row: {
+          created_at: string
+          id: string
+          mercado: string | null
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mercado?: string | null
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mercado?: string | null
+          nome?: string
+          updated_at?: string
         }
         Relationships: []
       }
