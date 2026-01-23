@@ -30,6 +30,7 @@ const Index = () => {
           setor,
           inquilino,
           status,
+          area_m2,
           responsaveis (nome)
         `)
         .order("codigo");
@@ -43,6 +44,7 @@ const Index = () => {
         setor: box.setor,
         inquilino: box.inquilino,
         status: box.status,
+        area_m2: box.area_m2,
         responsavel_nome: (box.responsaveis as any)?.nome || null,
       })) || [];
     }

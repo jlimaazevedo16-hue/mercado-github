@@ -18,6 +18,7 @@ export interface Box {
   setor: string | null;
   inquilino: string | null;
   status: string;
+  area_m2?: number | null;
   responsavel_nome?: string;
 }
 
@@ -100,6 +101,7 @@ export const BoxTable = ({ boxes, onSelectBox, selectedBoxId, isLoading }: BoxTa
             <TableHead className="font-semibold">Código</TableHead>
             <TableHead className="font-semibold">Box</TableHead>
             <TableHead className="font-semibold">Setor</TableHead>
+            <TableHead className="font-semibold">Área (m²)</TableHead>
             <TableHead className="font-semibold">Inquilino</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
             <TableHead className="font-semibold">Pendências</TableHead>
@@ -122,6 +124,7 @@ export const BoxTable = ({ boxes, onSelectBox, selectedBoxId, isLoading }: BoxTa
               </TableCell>
               <TableCell className="text-foreground font-medium">{box.boxe}</TableCell>
               <TableCell className="text-foreground">{box.setor || "—"}</TableCell>
+              <TableCell className="text-foreground">{box.area_m2 ? `${box.area_m2} m²` : "—"}</TableCell>
               <TableCell className="text-foreground">{box.inquilino || "—"}</TableCell>
               <TableCell>
                 <Badge variant={getStatusBadgeVariant(box.status)}>
