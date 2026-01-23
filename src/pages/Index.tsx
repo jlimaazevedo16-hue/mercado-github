@@ -122,13 +122,15 @@ const Index = () => {
             <BoxDetails 
               box={{
                 id: selectedBox.codigo,
+                boxId: selectedBox.id,
                 bloco: selectedBox.boxe,
-                tipo: selectedBox.setor_nome || "Box",
+                tipo: selectedBox.setor_nome || "",
                 segmento: selectedBox.segmento_nome || undefined,
-                area: undefined,
+                area: selectedBox.area_m2 || undefined,
                 status: selectedBox.status === "ASSINADO" ? "Ativo" : 
                         selectedBox.status === "DISPONIVEL" ? "Disponível" :
-                        selectedBox.status === "PROCESSO" ? "Em Reforma" : "Interditado"
+                        selectedBox.status === "PROCESSO" ? "Em Reforma" : "Interditado",
+                fotoUrl: undefined
               }} 
               onClose={() => setSelectedBox(null)} 
             />
