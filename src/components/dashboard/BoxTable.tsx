@@ -15,7 +15,9 @@ export interface Box {
   id: string;
   codigo: string;
   boxe: string;
-  setor: string | null;
+  setor_nome: string | null;
+  setor_mercado?: string | null;
+  segmento_nome: string | null;
   inquilino: string | null;
   status: string;
   area_m2?: number | null;
@@ -101,6 +103,7 @@ export const BoxTable = ({ boxes, onSelectBox, selectedBoxId, isLoading }: BoxTa
             <TableHead className="font-semibold">Código</TableHead>
             <TableHead className="font-semibold">Box</TableHead>
             <TableHead className="font-semibold">Setor</TableHead>
+            <TableHead className="font-semibold">Segmento</TableHead>
             <TableHead className="font-semibold">Área (m²)</TableHead>
             <TableHead className="font-semibold">Inquilino</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
@@ -123,7 +126,8 @@ export const BoxTable = ({ boxes, onSelectBox, selectedBoxId, isLoading }: BoxTa
                 </span>
               </TableCell>
               <TableCell className="text-foreground font-medium">{box.boxe}</TableCell>
-              <TableCell className="text-foreground">{box.setor || "—"}</TableCell>
+              <TableCell className="text-foreground">{box.setor_nome || "—"}</TableCell>
+              <TableCell className="text-foreground">{box.segmento_nome || "—"}</TableCell>
               <TableCell className="text-foreground">{box.area_m2 ? `${box.area_m2} m²` : "—"}</TableCell>
               <TableCell className="text-foreground">{box.inquilino || "—"}</TableCell>
               <TableCell>
