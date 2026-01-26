@@ -90,17 +90,17 @@ export default function GestaoUsuarios() {
       
       if (profilesError) throw profilesError;
 
-      // Fetch roles for all users
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
+      // Fetch roles for all users from compatibility view
+      const { data: rolesData, error: rolesError } = await (supabase
+        .from('user_roles_view' as any)
+        .select('user_id, role') as unknown as Promise<{ data: { user_id: string; role: AppRole }[] | null; error: any }>);
       
       if (rolesError) throw rolesError;
 
       // Combine data
       const usersWithRoles = (profilesData || []).map(profile => ({
         ...profile,
-        user_roles: rolesData?.filter(r => r.user_id === profile.user_id) || []
+        user_roles: (rolesData || []).filter(r => r.user_id === profile.user_id)
       }));
 
       return usersWithRoles as Profile[];
@@ -111,13 +111,13 @@ export default function GestaoUsuarios() {
   const { data: permissions = [], isLoading: loadingPermissions } = useQuery({
     queryKey: ['role-permissions'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('role_permissions')
+      const { data, error } = await (supabase
+        .from('role_permissions_view' as any)
         .select('*')
-        .order('role');
+        .order('role') as unknown as Promise<{ data: Permission[] | null; error: any }>);
       
       if (error) throw error;
-      return data as Permission[];
+      return (data || []) as Permission[];
     }
   });
 

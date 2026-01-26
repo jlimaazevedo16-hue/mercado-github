@@ -37,33 +37,40 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // Fetch user role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
+      // Fetch user role from compatibility view
+      // Using type assertion because views are not in generated types
+      const { data: roleData, error: roleError } = await (supabase
+        .from('user_roles_view' as any)
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle() as unknown as Promise<{ data: { role: string } | null; error: any }>);
 
+      let userRole: AppRole = 'funcionario';
+      
       if (roleError) {
         console.error('Error fetching role:', roleError);
-        setRole('funcionario'); // Default role
-      } else {
-        setRole(roleData?.role as AppRole || 'funcionario');
+      } else if (roleData?.role) {
+        userRole = roleData.role as AppRole;
       }
+      
+      setRole(userRole);
 
-      // Fetch permissions for user's role
-      const { data: permData, error: permError } = await supabase
-        .from('role_permissions')
+      // Fetch permissions for user's role from compatibility view
+      const { data: permData, error: permError } = await (supabase
+        .from('role_permissions_view' as any)
         .select('permission_key, can_view, can_edit')
-        .eq('role', roleData?.role || 'funcionario');
+        .eq('role', userRole) as unknown as Promise<{ data: Permission[] | null; error: any }>);
 
       if (permError) {
         console.error('Error fetching permissions:', permError);
+        setPermissions([]);
       } else {
         setPermissions(permData || []);
       }
     } catch (error) {
       console.error('Error in fetchRoleAndPermissions:', error);
+      setRole('funcionario');
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
