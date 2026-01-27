@@ -64,7 +64,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
 
       // 2. Busca as permissões associadas a esse cargo
       const { data: permData, error: permError } = await (supabase
-        .from('role_permissions_view' as any)
+        .from('role_permissions' as any)
         .select('permission_key, can_view, can_edit')
         .eq('role', userRole) as any);
 
