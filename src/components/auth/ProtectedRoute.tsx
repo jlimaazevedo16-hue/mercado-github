@@ -14,7 +14,8 @@ export const ProtectedRoute = ({
   requiredAction = 'view'
 }: ProtectedRouteProps) => {
   const { session, loading: authLoading } = useAuth();
-  const { hasPermission, loading: roleLoading } = useUserRole();
+  // Adicionamos o 'role' aqui, vindo do seu hook de permissões
+  const { hasPermission, role, loading: roleLoading } = useUserRole();
 
   if (authLoading || roleLoading) {
     return (
@@ -27,6 +28,13 @@ export const ProtectedRoute = ({
   if (!session) {
     return <Navigate to="/login" replace />;
   }
+
+  // --- IMPLEMENTAÇÃO DA AÇÃO 2 ---
+  // Se for admin master, ignora qualquer outra restrição e libera o acesso
+  if (role === 'administrador_master') {
+    return <>{children}</>;
+  }
+  // -------------------------------
 
   // Check permission if required
   if (requiredPermission && !hasPermission(requiredPermission, requiredAction)) {
