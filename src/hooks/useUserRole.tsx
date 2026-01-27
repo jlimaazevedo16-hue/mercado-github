@@ -4,13 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 type AppRole = 'administrador_master' | 'administrador' | 'fiscal' | 'funcionario' | 'lojista';
 
+interface Permission {
+  permission_key: string;
+  can_view: boolean;
+  can_edit: boolean;
+}
+
 interface UserRoleContextType {
   role: AppRole | null;
-  permissions: any[];
+  permissions: Permission[];
   loading: boolean;
   isAdmin: boolean;
   isAdminMaster: boolean;
-  hasPermission: (key: string, action?: string) => boolean;
+  hasPermission: (key: string, action?: 'view' | 'edit') => boolean;
   refetch: () => Promise<void>;
 }
 
@@ -19,43 +25,81 @@ const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined
 export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [role, setRole] = useState<AppRole | null>(null);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async () => {
-    try {
-      setLoading(true);
-      if (!user) {
-        setRole(null);
-        return;
-      }
+  const fetchRoleAndPermissions = async () => {
+    if (!user) {
+      setRole(null);
+      setPermissions([]);
+      setLoading(false);
+      return;
+    }
 
-      const { data } = await supabase
+    try {
+      // Fetch user role from user_roles table
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Se houver cargo no banco, usa ele. Se não, e for você, força Master.
-      setRole((data?.role as AppRole) || 'administrador_master');
-    } catch (e) {
-      setRole('administrador_master'); // Em caso de erro, libera para não travar
+      let userRole: AppRole = 'administrador_master'; // Default to master if no role found
+      
+      if (roleError) {
+        console.error('Error fetching role:', roleError);
+      } else if (roleData?.role) {
+        userRole = roleData.role as AppRole;
+      }
+      
+      setRole(userRole);
+
+      // Fetch permissions for user's role from role_permissions table
+      const { data: permData, error: permError } = await supabase
+        .from('role_permissions')
+        .select('permission_key, can_view, can_edit')
+        .eq('role', userRole);
+
+      if (permError) {
+        console.error('Error fetching permissions:', permError);
+        setPermissions([]);
+      } else {
+        setPermissions(permData || []);
+      }
+    } catch (error) {
+      console.error('Error in fetchRoleAndPermissions:', error);
+      setRole('administrador_master');
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchRole(); }, [user?.id]);
+  useEffect(() => {
+    fetchRoleAndPermissions();
+  }, [user]);
+
+  const hasPermission = (key: string, action: 'view' | 'edit' = 'view'): boolean => {
+    // Admin master has full access to everything
+    if (role === 'administrador_master') return true;
+    
+    const perm = permissions.find(p => p.permission_key === key);
+    if (!perm) return false;
+    return action === 'view' ? perm.can_view : perm.can_edit;
+  };
 
   return (
-    <UserRoleContext.Provider value={{ 
-      role, 
-      permissions: [], 
-      loading, 
-      isAdmin: true, 
-      isAdminMaster: true, 
-      hasPermission: () => true, // Libera TUDO
-      refetch: fetchRole 
-    }}>
+    <UserRoleContext.Provider 
+      value={{ 
+        role, 
+        permissions, 
+        loading, 
+        isAdmin: role === 'administrador' || role === 'administrador_master',
+        isAdminMaster: role === 'administrador_master',
+        hasPermission,
+        refetch: fetchRoleAndPermissions
+      }}
+    >
       {children}
     </UserRoleContext.Provider>
   );
@@ -63,5 +107,8 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
 
 export const useUserRole = () => {
   const context = useContext(UserRoleContext);
-  return context || { role: 'administrador_master', loading: false, isAdmin: true, isAdminMaster: true, hasPermission: () => true };
+  if (context === undefined) {
+    throw new Error('useUserRole must be used within a UserRoleProvider');
+  }
+  return context;
 };
