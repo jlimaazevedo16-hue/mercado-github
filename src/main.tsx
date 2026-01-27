@@ -1,6 +1,14 @@
-// Build timestamp: 2026-01-26T12:00:00Z - Force cache invalidation
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+import App from "./App";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(<App />);
+import { AuthProvider } from "@/contexts/AuthContext";
+import { UserRoleProvider } from "@/hooks/useUserRole";
+
+createRoot(document.getElementById("root")!).render(
+  <AuthProvider>
+    <UserRoleProvider>
+      <App />
+    </UserRoleProvider>
+  </AuthProvider>
+);
