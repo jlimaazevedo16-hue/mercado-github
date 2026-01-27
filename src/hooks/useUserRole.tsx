@@ -41,7 +41,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
 
       // 1. Busca o cargo do usuário na view consolidada
       const { data: roleData, error: roleError } = await (supabase
-        .from('user_roles_view' as any)
+        .from('user_roles' as any)
         .select('role')
         .eq('user_id', user.id)
         .maybeSingle() as any);
