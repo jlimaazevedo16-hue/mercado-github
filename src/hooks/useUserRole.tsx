@@ -29,46 +29,49 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchRoleAndPermissions = async () => {
-    if (user?.email === 'jlimaazevedo16@gmail.com') {
-  setRole('administrador_master');
-  setPermissions([]);
-  setLoading(false);
-  return;
-}
+    // Se não houver usuário logado, resetamos os estados
+    if (!user?.id) {
+      setRole(null);
+      setPermissions([]);
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Fetch user role from compatibility view
-      // Using type assertion because views are not in generated types
+      setLoading(true);
+
+      // 1. Busca o cargo do usuário na view consolidada
       const { data: roleData, error: roleError } = await (supabase
         .from('user_roles_view' as any)
         .select('role')
         .eq('user_id', user.id)
-        .maybeSingle() as unknown as Promise<{ data: { role: string } | null; error: any }>);
+        .maybeSingle() as any);
 
-      let userRole: AppRole = 'funcionario';
-      
+      let userRole: AppRole = 'funcionario'; // Role padrão caso não encontre nada
+
       if (roleError) {
-        console.error('Error fetching role:', roleError);
+        console.error('Erro ao buscar cargo:', roleError);
       } else if (roleData?.role) {
         userRole = roleData.role as AppRole;
       }
       
       setRole(userRole);
 
-      // Fetch permissions for user's role from compatibility view
+      // 2. Busca as permissões associadas a esse cargo
       const { data: permData, error: permError } = await (supabase
         .from('role_permissions_view' as any)
         .select('permission_key, can_view, can_edit')
-        .eq('role', userRole) as unknown as Promise<{ data: Permission[] | null; error: any }>);
+        .eq('role', userRole) as any);
 
       if (permError) {
-        console.error('Error fetching permissions:', permError);
+        console.error('Erro ao buscar permissões:', permError);
         setPermissions([]);
       } else {
         setPermissions(permData || []);
       }
+
     } catch (error) {
-      console.error('Error in fetchRoleAndPermissions:', error);
+      console.error('Erro crítico no fetchRoleAndPermissions:', error);
       setRole('funcionario');
       setPermissions([]);
     } finally {
@@ -76,16 +79,18 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Dispara a busca sempre que o usuário mudar (login/logout)
   useEffect(() => {
     fetchRoleAndPermissions();
-  }, [user]);
+  }, [user?.id]);
 
   const hasPermission = (key: string, action: 'view' | 'edit' = 'view'): boolean => {
-    // Admin master has full access to everything
+    // Regra de Ouro: Administrador Master ignora qualquer restrição
     if (role === 'administrador_master') return true;
     
     const perm = permissions.find(p => p.permission_key === key);
     if (!perm) return false;
+    
     return action === 'view' ? perm.can_view : perm.can_edit;
   };
 
@@ -109,7 +114,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
 export const useUserRole = () => {
   const context = useContext(UserRoleContext);
   if (context === undefined) {
-    throw new Error('useUserRole must be used within a UserRoleProvider');
+    throw new Error('useUserRole deve ser usado dentro de um UserRoleProvider');
   }
   return context;
 };
