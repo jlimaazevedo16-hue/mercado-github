@@ -29,7 +29,6 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchRoleAndPermissions = async () => {
-    // Se não houver usuário logado, resetamos os estados
     if (!user?.id) {
       setRole(null);
       setPermissions([]);
@@ -47,7 +46,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
         .eq('user_id', user.id)
         .maybeSingle() as any);
 
-      let userRole: AppRole = 'funcionario'; // Role padrão caso não encontre nada
+      let userRole: AppRole = 'funcionario';
 
       if (roleError) {
         console.error('Erro ao buscar cargo:', roleError);
@@ -55,6 +54,12 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
         userRole = roleData.role as AppRole;
       }
       
+      // --- LINHAS DE DEBUG (PASSO 1) ---
+      console.log("=== DEBUG DE ACESSO ===");
+      console.log("Seu ID no Supabase:", user?.id);
+      console.log("Cargo que o sistema leu do banco:", userRole);
+      // ---------------------------------
+
       setRole(userRole);
 
       // 2. Busca as permissões associadas a esse cargo
@@ -72,49 +77,4 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error) {
       console.error('Erro crítico no fetchRoleAndPermissions:', error);
-      setRole('funcionario');
-      setPermissions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Dispara a busca sempre que o usuário mudar (login/logout)
-  useEffect(() => {
-    fetchRoleAndPermissions();
-  }, [user?.id]);
-
-  const hasPermission = (key: string, action: 'view' | 'edit' = 'view'): boolean => {
-    // Regra de Ouro: Administrador Master ignora qualquer restrição
-    if (role === 'administrador_master') return true;
-    
-    const perm = permissions.find(p => p.permission_key === key);
-    if (!perm) return false;
-    
-    return action === 'view' ? perm.can_view : perm.can_edit;
-  };
-
-  return (
-    <UserRoleContext.Provider 
-      value={{ 
-        role, 
-        permissions, 
-        loading, 
-        isAdmin: role === 'administrador' || role === 'administrador_master',
-        isAdminMaster: role === 'administrador_master',
-        hasPermission,
-        refetch: fetchRoleAndPermissions
-      }}
-    >
-      {children}
-    </UserRoleContext.Provider>
-  );
-};
-
-export const useUserRole = () => {
-  const context = useContext(UserRoleContext);
-  if (context === undefined) {
-    throw new Error('useUserRole deve ser usado dentro de um UserRoleProvider');
-  }
-  return context;
-};
+      setRole('
