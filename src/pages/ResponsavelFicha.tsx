@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ArrowLeft, Save, FileText, History, Plus, 
-  Calendar, User, Phone, Mail, MapPin, Edit2, Package
+  Calendar, User, Phone, Mail, MapPin, Edit2, Package, MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -25,6 +25,7 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialog";
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
 import { PhotoUpload } from "@/components/shared/PhotoUpload";
+import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 
 const ResponsavelFicha = () => {
   const { id } = useParams();
@@ -36,6 +37,7 @@ const ResponsavelFicha = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [docDialogOpen, setDocDialogOpen] = useState(false);
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const isNew = id === "novo";
 
   const { data: responsavel, isLoading } = useQuery({
@@ -269,6 +271,18 @@ const ResponsavelFicha = () => {
               )}
             </div>
             <div className="ml-auto flex gap-2">
+              {/* WhatsApp Button */}
+              {!isNew && responsavel?.telefone && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setWhatsappDialogOpen(true)}
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </Button>
+              )}
+              
               {isEditing ? (
                 <>
                   {!isNew && (
@@ -289,6 +303,19 @@ const ResponsavelFicha = () => {
               )}
             </div>
           </div>
+
+          {/* WhatsApp Dialog */}
+          {!isNew && responsavel && (
+            <WhatsAppSendDialog
+              open={whatsappDialogOpen}
+              onOpenChange={setWhatsappDialogOpen}
+              destinatario={{
+                nome: responsavel.nome,
+                telefone: responsavel.telefone || "",
+                responsavel_id: responsavel.id,
+              }}
+            />
+          )}
 
           <Tabs defaultValue="dados" className="space-y-4">
             <TabsList>

@@ -1218,6 +1218,261 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_config: {
+        Row: {
+          created_at: string
+          espera_entre_lotes_minutos: number
+          id: string
+          intervalo_max_segundos: number
+          intervalo_min_segundos: number
+          max_mensagens_lote: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          espera_entre_lotes_minutos?: number
+          id?: string
+          intervalo_max_segundos?: number
+          intervalo_min_segundos?: number
+          max_mensagens_lote?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          espera_entre_lotes_minutos?: number
+          id?: string
+          intervalo_max_segundos?: number
+          intervalo_min_segundos?: number
+          max_mensagens_lote?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_instances: {
+        Row: {
+          api_key: string
+          api_url: string
+          created_at: string
+          created_by: string | null
+          id: string
+          instance_name: string
+          nome: string
+          phone_number: string | null
+          qr_code: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          api_url: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_name: string
+          nome: string
+          phone_number?: string | null
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_name?: string
+          nome?: string
+          phone_number?: string | null
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_logs: {
+        Row: {
+          conteudo: string
+          created_at: string
+          destinatario_nome: string | null
+          destinatario_telefone: string
+          enviado_por: string | null
+          id: string
+          instance_id: string | null
+          queue_id: string | null
+          resposta_api: Json | null
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          destinatario_nome?: string | null
+          destinatario_telefone: string
+          enviado_por?: string | null
+          id?: string
+          instance_id?: string | null
+          queue_id?: string | null
+          resposta_api?: Json | null
+          status: string
+          template_id?: string | null
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          destinatario_nome?: string | null
+          destinatario_telefone?: string
+          enviado_por?: string | null
+          id?: string
+          instance_id?: string | null
+          queue_id?: string | null
+          resposta_api?: Json | null
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_logs_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_queue: {
+        Row: {
+          agendado_para: string | null
+          box_id: string | null
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          destinatario_nome: string | null
+          destinatario_telefone: string
+          erro_mensagem: string | null
+          id: string
+          instance_id: string | null
+          responsavel_id: string | null
+          status: string
+          template_id: string | null
+          tentativas: number
+          updated_at: string
+        }
+        Insert: {
+          agendado_para?: string | null
+          box_id?: string | null
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          destinatario_nome?: string | null
+          destinatario_telefone: string
+          erro_mensagem?: string | null
+          id?: string
+          instance_id?: string | null
+          responsavel_id?: string | null
+          status?: string
+          template_id?: string | null
+          tentativas?: number
+          updated_at?: string
+        }
+        Update: {
+          agendado_para?: string | null
+          box_id?: string | null
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          destinatario_nome?: string | null
+          destinatario_telefone?: string
+          erro_mensagem?: string | null
+          id?: string
+          instance_id?: string | null
+          responsavel_id?: string | null
+          status?: string
+          template_id?: string | null
+          tentativas?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_queue_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_queue_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_queue_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_queue_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          ativo: boolean
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          tipo: string
+          updated_at: string
+          variaveis: string[] | null
+        }
+        Insert: {
+          ativo?: boolean
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Update: {
+          ativo?: boolean
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

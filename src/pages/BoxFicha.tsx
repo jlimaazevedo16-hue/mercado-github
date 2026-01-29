@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   ArrowLeft, Save, FileText, Wrench, History, Plus, 
-  Calendar, User, MapPin, Building2, Trash2, Edit2, AlertTriangle 
+  Calendar, User, MapPin, Building2, Trash2, Edit2, AlertTriangle, MessageCircle 
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -28,6 +28,7 @@ import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialo
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
 import { PhotoUpload } from "@/components/shared/PhotoUpload";
 import { BoxNotificacoesPAD } from "@/components/box/BoxNotificacoesPAD";
+import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 
 const statusOptions = [
   "ASSINADO", "DISPONIVEL", "PROCESSO", "CANCELADO", 
@@ -46,6 +47,7 @@ const BoxFicha = () => {
   const [newMaintenance, setNewMaintenance] = useState({ tipo: "", descricao: "", data_solicitacao: "", responsavel: "", custo: "" });
   const [docDialogOpen, setDocDialogOpen] = useState(false);
   const [maintDialogOpen, setMaintDialogOpen] = useState(false);
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
 
   const { data: box, isLoading, isError, error } = useQuery({
     queryKey: ["box", id],
@@ -352,6 +354,18 @@ const BoxFicha = () => {
               </p>
             </div>
             <div className="ml-auto flex gap-2">
+              {/* WhatsApp Button */}
+              {(box as any).responsaveis?.telefone && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setWhatsappDialogOpen(true)}
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </Button>
+              )}
+              
               {isEditing ? (
                 <>
                   <Button variant="outline" onClick={() => { setIsEditing(false); setFormData(box); }}>
@@ -370,6 +384,20 @@ const BoxFicha = () => {
               )}
             </div>
           </div>
+
+          {/* WhatsApp Dialog */}
+          {(box as any).responsaveis && (
+            <WhatsAppSendDialog
+              open={whatsappDialogOpen}
+              onOpenChange={setWhatsappDialogOpen}
+              destinatario={{
+                nome: (box as any).responsaveis.nome,
+                telefone: (box as any).responsaveis.telefone || "",
+                responsavel_id: (box as any).responsaveis.id,
+                box_id: box.id,
+              }}
+            />
+          )}
 
           <Tabs defaultValue="dados" className="space-y-4">
             <TabsList className="flex-wrap">
