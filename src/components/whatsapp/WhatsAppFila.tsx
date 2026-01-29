@@ -65,17 +65,56 @@ export const WhatsAppFila = () => {
     },
   });
 
+  // Simulated queue processing - no real API calls
   const processQueueMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("whatsapp-evolution", {
-        body: { action: "process_queue" },
-      });
-      if (error) throw error;
-      return data;
+      // Get pending items
+      const { data: pendingItems, error: fetchError } = await supabase
+        .from("whatsapp_queue")
+        .select("*")
+        .eq("status", "pendente")
+        .limit(10);
+
+      if (fetchError) throw fetchError;
+      if (!pendingItems || pendingItems.length === 0) return { processed: 0 };
+
+      let processed = 0;
+      for (const item of pendingItems) {
+        // Simulate processing delay
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Update queue status to simulated
+        await supabase
+          .from("whatsapp_queue")
+          .update({ 
+            status: "simulado_enviado",
+            tentativas: (item.tentativas || 0) + 1
+          })
+          .eq("id", item.id);
+
+        // Create log entry for simulated send
+        await supabase
+          .from("whatsapp_logs")
+          .insert({
+            queue_id: item.id,
+            instance_id: item.instance_id,
+            template_id: item.template_id,
+            destinatario_telefone: item.destinatario_telefone,
+            destinatario_nome: item.destinatario_nome,
+            conteudo: item.conteudo,
+            status: "simulado_enviado",
+            resposta_api: { simulated: true, message: "Modo de simulação ativo" }
+          });
+
+        processed++;
+      }
+
+      return { processed };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["whatsapp-queue"] });
-      toast.success(`Processamento iniciado: ${data?.processed || 0} mensagens`);
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-logs"] });
+      toast.success(`Simulação concluída: ${data?.processed || 0} mensagens processadas`);
     },
     onError: (error) => {
       toast.error("Erro ao processar fila: " + error.message);
@@ -86,21 +125,27 @@ export const WhatsAppFila = () => {
     switch (status) {
       case "enviado":
         return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> Enviado</Badge>;
+      case "simulado_enviado":
+        return <Badge className="bg-blue-500"><CheckCircle className="w-3 h-3 mr-1" /> Simulado</Badge>;
       case "processando":
         return <Badge variant="outline" className="text-blue-600 border-blue-600"><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processando</Badge>;
       case "erro":
         return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> Erro</Badge>;
+      case "erro_simulado":
+        return <Badge variant="outline" className="text-red-600 border-red-600"><XCircle className="w-3 h-3 mr-1" /> Erro (Sim.)</Badge>;
       case "agendado":
         return <Badge variant="outline" className="text-purple-600 border-purple-600"><Clock className="w-3 h-3 mr-1" /> Agendado</Badge>;
+      case "pausado":
+        return <Badge variant="outline" className="text-orange-600 border-orange-600"><Clock className="w-3 h-3 mr-1" /> Pausado</Badge>;
       default:
         return <Badge variant="secondary"><AlertCircle className="w-3 h-3 mr-1" /> Pendente</Badge>;
     }
   };
 
-  const pendingCount = queueItems?.filter((i) => i.status === "pendente").length || 0;
+  const pendingCount = queueItems?.filter((i) => i.status === "pendente" || i.status === "pausado").length || 0;
   const processingCount = queueItems?.filter((i) => i.status === "processando").length || 0;
-  const sentCount = queueItems?.filter((i) => i.status === "enviado").length || 0;
-  const errorCount = queueItems?.filter((i) => i.status === "erro").length || 0;
+  const sentCount = queueItems?.filter((i) => i.status === "enviado" || i.status === "simulado_enviado").length || 0;
+  const errorCount = queueItems?.filter((i) => i.status === "erro" || i.status === "erro_simulado").length || 0;
 
   return (
     <Card>
@@ -123,13 +168,14 @@ export const WhatsAppFila = () => {
             <Button
               onClick={() => processQueueMutation.mutate()}
               disabled={processQueueMutation.isPending || pendingCount === 0}
+              title="Processa mensagens em modo simulado (sem envio real)"
             >
               {processQueueMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Play className="h-4 w-4 mr-2" />
               )}
-              Processar Fila
+              Simular Envio
             </Button>
           </div>
         </div>

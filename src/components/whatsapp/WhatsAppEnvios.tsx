@@ -252,10 +252,14 @@ export const WhatsAppEnvios = () => {
           Envio de Mensagens
         </CardTitle>
         <CardDescription>
-          Envie mensagens para responsáveis, boxes ou listas personalizadas
+          Adicione mensagens à fila de envio (modo simulado - sem envio real)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Warning */}
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-200">
+          ⚠️ <strong>Modo de Simulação:</strong> As mensagens serão adicionadas à fila mas não serão enviadas de verdade.
+        </div>
         {/* Instância e Template */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -500,10 +504,11 @@ export const WhatsAppEnvios = () => {
           disabled={enqueueMutation.isPending || !instanceId || !templateId}
           className="w-full"
           size="lg"
+          title="Adiciona mensagens à fila (modo simulado)"
         >
           {enqueueMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           <Send className="h-4 w-4 mr-2" />
-          {isScheduled ? "Agendar Envio" : "Enviar Agora"}
+          {isScheduled ? "Agendar na Fila" : "Adicionar à Fila"}
         </Button>
       </CardContent>
     </Card>

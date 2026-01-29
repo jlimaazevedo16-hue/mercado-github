@@ -8,10 +8,11 @@ import { WhatsAppEnvios } from "@/components/whatsapp/WhatsAppEnvios";
 import { WhatsAppFila } from "@/components/whatsapp/WhatsAppFila";
 import { WhatsAppLogs } from "@/components/whatsapp/WhatsAppLogs";
 import { WhatsAppConfig } from "@/components/whatsapp/WhatsAppConfig";
+import { WhatsAppIntegrationBanner } from "@/components/whatsapp/WhatsAppIntegrationBanner";
 
 const WhatsApp = () => {
   const [activeItem, setActiveItem] = useState("whatsapp");
-  const [activeTab, setActiveTab] = useState("instancias");
+  const [activeTab, setActiveTab] = useState("templates");
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -20,11 +21,13 @@ const WhatsApp = () => {
         <Header />
         <main className="flex-1 p-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">WhatsApp - Evolution API</h1>
+            <h1 className="text-2xl font-bold text-foreground">WhatsApp - Comunicação Institucional</h1>
             <p className="text-muted-foreground">
-              Gerencie instâncias, templates e envios de mensagens via WhatsApp
+              Gerencie templates, envios e acompanhe mensagens via WhatsApp
             </p>
           </div>
+
+          <WhatsAppIntegrationBanner />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
