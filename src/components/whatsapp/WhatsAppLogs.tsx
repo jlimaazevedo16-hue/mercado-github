@@ -72,8 +72,12 @@ export const WhatsAppLogs = () => {
     switch (status) {
       case "enviado":
         return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> Enviado</Badge>;
+      case "simulado_enviado":
+        return <Badge className="bg-blue-500"><CheckCircle className="w-3 h-3 mr-1" /> Simulado</Badge>;
       case "erro":
         return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> Erro</Badge>;
+      case "erro_simulado":
+        return <Badge variant="outline" className="text-red-600 border-red-600"><XCircle className="w-3 h-3 mr-1" /> Erro (Sim.)</Badge>;
       case "bloqueado":
         return <Badge variant="outline" className="text-orange-600 border-orange-600"><Ban className="w-3 h-3 mr-1" /> Bloqueado</Badge>;
       default:
@@ -114,7 +118,9 @@ export const WhatsAppLogs = () => {
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="enviado">Enviado</SelectItem>
+              <SelectItem value="simulado_enviado">Simulado</SelectItem>
               <SelectItem value="erro">Erro</SelectItem>
+              <SelectItem value="erro_simulado">Erro (Simulado)</SelectItem>
               <SelectItem value="bloqueado">Bloqueado</SelectItem>
             </SelectContent>
           </Select>

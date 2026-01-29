@@ -137,6 +137,9 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, destinatario }: WhatsAp
             <MessageCircle className="h-5 w-5 text-green-600" />
             Enviar WhatsApp
           </DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            ⚠️ Modo simulado ativo - mensagens serão adicionadas à fila sem envio real
+          </p>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -219,13 +222,14 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, destinatario }: WhatsAp
               onClick={handleSend}
               disabled={sendMutation.isPending || !instanceId}
               className="flex-1"
+              title="Adiciona à fila de envio (modo simulado)"
             >
               {sendMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />
               )}
-              Enviar
+              Adicionar à Fila
             </Button>
           </div>
         </div>
