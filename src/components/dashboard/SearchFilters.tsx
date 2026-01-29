@@ -3,6 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface Responsavel {
+  id: string;
+  nome: string;
+}
+
 interface SearchFiltersProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
@@ -11,6 +16,9 @@ interface SearchFiltersProps {
   setorFilter: string;
   onSetorChange: (value: string) => void;
   setores: string[];
+  responsavelFilter?: string;
+  onResponsavelChange?: (value: string) => void;
+  responsaveis?: Responsavel[];
   onNewBox?: () => void;
 }
 
@@ -33,11 +41,14 @@ export const SearchFilters = ({
   setorFilter,
   onSetorChange,
   setores,
+  responsavelFilter,
+  onResponsavelChange,
+  responsaveis,
   onNewBox,
 }: SearchFiltersProps) => {
   return (
-    <div className="flex items-center gap-3 bg-card p-4 rounded-lg shadow-sm">
-      <div className="relative flex-1">
+    <div className="flex flex-wrap items-center gap-3 bg-card p-4 rounded-lg shadow-sm">
+      <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
         <Input 
           placeholder="Buscar por código, box ou inquilino..." 
@@ -71,6 +82,20 @@ export const SearchFilters = ({
           ))}
         </SelectContent>
       </Select>
+
+      {responsaveis && onResponsavelChange && (
+        <Select value={responsavelFilter || "all"} onValueChange={onResponsavelChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Responsável" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Responsáveis</SelectItem>
+            {responsaveis.map((resp) => (
+              <SelectItem key={resp.id} value={resp.id}>{resp.nome}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
       
       {onNewBox && (
         <Button 

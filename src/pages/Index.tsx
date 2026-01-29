@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
-import { StatCards } from "@/components/dashboard/StatCards";
 import { SearchFilters } from "@/components/dashboard/SearchFilters";
 import { BoxTable, Box } from "@/components/dashboard/BoxTable";
 import { BoxDetails } from "@/components/dashboard/BoxDetails";
+import { BoxesStatCards } from "@/components/boxes/BoxesStatCards";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [setorFilter, setSetorFilter] = useState("all");
+  const [responsavelFilter, setResponsavelFilter] = useState("all");
 
   // Fetch boxes from database
   const { data: boxesData, isLoading } = useQuery({
@@ -30,9 +31,10 @@ const Index = () => {
           inquilino,
           status,
           area_m2,
+          responsavel_id,
           setores ( id, nome, mercado ),
           segmentos ( id, nome ),
-          responsaveis (nome)
+          responsaveis (id, nome)
         `)
         .order("codigo");
       
@@ -48,10 +50,50 @@ const Index = () => {
         inquilino: box.inquilino,
         status: box.status,
         area_m2: box.area_m2,
+        responsavel_id: box.responsavel_id,
         responsavel_nome: (box.responsaveis as any)?.nome || null,
       })) || [];
     }
   });
+
+  // Fetch responsaveis for filter
+  const { data: responsaveisData } = useQuery({
+    queryKey: ["responsaveis-filter"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("responsaveis")
+        .select("id, nome")
+        .eq("status", "ATIVO")
+        .order("nome");
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    if (!boxesData) return {
+      total: 0,
+      assinados: 0,
+      disponiveis: 0,
+      emProcesso: 0,
+      interditados: 0,
+      responsaveisAtivos: 0,
+      areaTotal: 0
+    };
+
+    const uniqueResponsaveis = new Set(boxesData.filter(b => b.responsavel_id).map(b => b.responsavel_id));
+
+    return {
+      total: boxesData.length,
+      assinados: boxesData.filter(b => b.status === "ASSINADO").length,
+      disponiveis: boxesData.filter(b => b.status === "DISPONIVEL").length,
+      emProcesso: boxesData.filter(b => b.status === "PROCESSO").length,
+      interditados: boxesData.filter(b => b.status === "INTERDITADO").length,
+      responsaveisAtivos: uniqueResponsaveis.size,
+      areaTotal: boxesData.reduce((sum, b) => sum + (b.area_m2 || 0), 0)
+    };
+  }, [boxesData]);
 
   // Get unique setores for filter
   const setores = useMemo(() => {
@@ -82,9 +124,12 @@ const Index = () => {
       // Setor filter
       const matchesSetor = setorFilter === "all" || box.setor_nome === setorFilter;
 
-      return matchesSearch && matchesStatus && matchesSetor;
+      // Responsavel filter
+      const matchesResponsavel = responsavelFilter === "all" || box.responsavel_id === responsavelFilter;
+
+      return matchesSearch && matchesStatus && matchesSetor && matchesResponsavel;
     });
-  }, [boxesData, searchTerm, statusFilter, setorFilter]);
+  }, [boxesData, searchTerm, statusFilter, setorFilter, responsavelFilter]);
 
   const handleSelectBox = (box: Box) => {
     setSelectedBox(box);
@@ -99,7 +144,12 @@ const Index = () => {
         
         <div className="flex flex-1">
           <main className="flex-1 p-6 space-y-6 overflow-auto">
-            <StatCards />
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">Gestão de Boxes</h1>
+            </div>
+
+            <BoxesStatCards stats={stats} />
+
             <SearchFilters 
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -108,6 +158,9 @@ const Index = () => {
               setorFilter={setorFilter}
               onSetorChange={setSetorFilter}
               setores={setores}
+              responsavelFilter={responsavelFilter}
+              onResponsavelChange={setResponsavelFilter}
+              responsaveis={responsaveisData}
               onNewBox={() => navigate("/boxes/novo")}
             />
             <BoxTable 
