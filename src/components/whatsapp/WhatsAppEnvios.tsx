@@ -265,7 +265,7 @@ export const WhatsAppEnvios = () => {
                 <SelectValue placeholder="Selecione a instância" />
               </SelectTrigger>
               <SelectContent>
-                {instances?.map((inst) => (
+                {instances?.filter((inst) => inst.id).map((inst) => (
                   <SelectItem key={inst.id} value={inst.id}>
                     {inst.nome}
                   </SelectItem>
@@ -284,7 +284,7 @@ export const WhatsAppEnvios = () => {
                 <SelectValue placeholder="Selecione o template" />
               </SelectTrigger>
               <SelectContent>
-                {templates?.map((tpl) => (
+                {templates?.filter((tpl) => tpl.id).map((tpl) => (
                   <SelectItem key={tpl.id} value={tpl.id}>
                     {tpl.nome}
                   </SelectItem>
@@ -408,7 +408,7 @@ export const WhatsAppEnvios = () => {
                 <SelectValue placeholder="Selecione o setor" />
               </SelectTrigger>
               <SelectContent>
-                {setores?.map((setor) => (
+                {setores?.filter((setor) => setor.id).map((setor) => (
                   <SelectItem key={setor.id} value={setor.id}>
                     {setor.nome}
                   </SelectItem>
@@ -429,7 +429,7 @@ export const WhatsAppEnvios = () => {
                 <SelectValue placeholder="Selecione o segmento" />
               </SelectTrigger>
               <SelectContent>
-                {segmentos?.map((seg) => (
+                {segmentos?.filter((seg) => seg.id).map((seg) => (
                   <SelectItem key={seg.id} value={seg.id}>
                     {seg.nome}
                   </SelectItem>
