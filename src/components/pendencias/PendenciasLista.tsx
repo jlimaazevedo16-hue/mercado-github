@@ -12,16 +12,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   AlertTriangle, Clock, FileWarning, Wrench, Scale, Search,
-  Upload, CheckCircle, AlertCircle, Calendar
+  Upload, CheckCircle, AlertCircle, Calendar, FileX, Plus, Building2
 } from 'lucide-react';
-import { format, differenceInDays, addDays, isAfter, isBefore } from 'date-fns';
+import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { DocumentUploadDialog } from '@/components/documents/DocumentUploadDialog';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Pendencia {
   id: string;
-  tipo: 'notificacao' | 'certificado' | 'reforma' | 'processo';
+  tipo: 'notificacao' | 'certificado' | 'reforma' | 'processo' | 'documento_ausente' | 'ocorrencia';
   titulo: string;
   descricao: string;
   data_vencimento: string | null;
@@ -30,6 +32,7 @@ interface Pendencia {
   entidade_tipo: string;
   entidade_id: string;
   entidade_nome: string;
+  responsavel_id?: string | null;
   em_providencia?: boolean;
   comprovante_url?: string;
 }
@@ -46,6 +49,8 @@ const tipoIcons: Record<string, React.ReactNode> = {
   certificado: <FileWarning className="h-4 w-4" />,
   reforma: <Wrench className="h-4 w-4" />,
   processo: <Scale className="h-4 w-4" />,
+  documento_ausente: <FileX className="h-4 w-4" />,
+  ocorrencia: <AlertCircle className="h-4 w-4" />,
 };
 
 const tipoLabels: Record<string, string> = {
@@ -53,10 +58,22 @@ const tipoLabels: Record<string, string> = {
   certificado: 'Certificado',
   reforma: 'Reforma',
   processo: 'Processo',
+  documento_ausente: 'Doc. Ausente',
+  ocorrencia: 'Ocorrência',
 };
+
+// Documentos obrigatórios por tipo de box
+const DOCUMENTOS_OBRIGATORIOS = [
+  'Alvará de Funcionamento',
+  'Licença Sanitária',
+  'Certificado de Higiene',
+];
 
 export const PendenciasLista = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { role, isAdmin, isAdminMaster } = useUserRole();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState<string>('all');
   const [urgenciaFilter, setUrgenciaFilter] = useState<string>('all');
@@ -64,6 +81,59 @@ export const PendenciasLista = () => {
   const [selectedPendencia, setSelectedPendencia] = useState<Pendencia | null>(null);
   const [providenciaDescricao, setProvidenciaDescricao] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showOcorrenciaDialog, setShowOcorrenciaDialog] = useState(false);
+  const [ocorrenciaData, setOcorrenciaData] = useState({
+    box_id: '',
+    titulo: '',
+    descricao: '',
+    data_vencimento: '',
+  });
+
+  // Buscar boxes do usuário se for lojista
+  const { data: userBoxes } = useQuery({
+    queryKey: ['user-boxes', user?.id],
+    queryFn: async () => {
+      if (isAdmin || isAdminMaster) return null;
+      
+      // Buscar responsável vinculado ao email do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('user_id', user?.id || '')
+        .single();
+
+      if (!profile?.email) return { responsavelId: null, boxes: [] };
+
+      const { data: responsavel } = await supabase
+        .from('responsaveis')
+        .select('id')
+        .eq('email', profile.email)
+        .single();
+
+      if (!responsavel) return { responsavelId: null, boxes: [] };
+
+      const { data: boxes } = await supabase
+        .from('boxes')
+        .select('id, codigo')
+        .eq('responsavel_id', responsavel.id);
+
+      return { responsavelId: responsavel.id, boxes: boxes || [] };
+    },
+    enabled: !!user && role === 'lojista',
+  });
+
+  // Buscar boxes para seleção na ocorrência manual
+  const { data: allBoxes } = useQuery({
+    queryKey: ['all-boxes-select'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('boxes')
+        .select('id, codigo, boxe, inquilino, responsavel_id')
+        .order('codigo');
+      return data || [];
+    },
+    enabled: isAdmin || isAdminMaster,
+  });
 
   const calculateUrgencia = (dataVencimento: string | null): 'vencido' | 'urgente' | 'proximo' | 'normal' => {
     if (!dataVencimento) return 'normal';
@@ -79,19 +149,28 @@ export const PendenciasLista = () => {
 
   // Fetch all pending items from different sources
   const { data: pendencias, isLoading } = useQuery({
-    queryKey: ['pendencias'],
+    queryKey: ['pendencias', userBoxes],
     queryFn: async () => {
       const allPendencias: Pendencia[] = [];
+      const userBoxIds = userBoxes?.boxes?.map(b => b.id) || [];
+      const isLojistaView = role === 'lojista' && userBoxIds.length > 0;
 
       // 1. Notificações pendentes
-      const { data: notificacoes } = await supabase
+      let notificacoesQuery = supabase
         .from('notificacoes')
         .select(`
           id, numero_interno, descricao_infracao, prazo_defesa, prazo_adequacao, status,
+          box_id, responsavel_id,
           boxes (codigo, boxe),
           responsaveis (nome)
         `)
         .in('status', ['pendente', 'em_analise']);
+
+      if (isLojistaView) {
+        notificacoesQuery = notificacoesQuery.in('box_id', userBoxIds);
+      }
+
+      const { data: notificacoes } = await notificacoesQuery;
 
       notificacoes?.forEach((n: any) => {
         const dataVenc = n.prazo_adequacao || n.prazo_defesa;
@@ -106,17 +185,24 @@ export const PendenciasLista = () => {
           entidade_tipo: 'box',
           entidade_id: n.boxes?.codigo || '',
           entidade_nome: `${n.boxes?.codigo || ''} - ${n.responsaveis?.nome || 'N/A'}`,
+          responsavel_id: n.responsavel_id,
         });
       });
 
       // 2. Certificados vencidos ou próximos do vencimento
-      const { data: boxDocs } = await supabase
+      let boxDocsQuery = supabase
         .from('box_documents')
         .select(`
           id, nome, tipo, data_validade,
-          boxes!box_documents_box_id_fkey (id, codigo, boxe, inquilino)
+          boxes!box_documents_box_id_fkey (id, codigo, boxe, inquilino, responsavel_id)
         `)
         .not('data_validade', 'is', null);
+
+      if (isLojistaView) {
+        boxDocsQuery = boxDocsQuery.in('box_id', userBoxIds);
+      }
+
+      const { data: boxDocs } = await boxDocsQuery;
 
       boxDocs?.forEach((doc: any) => {
         const urgencia = calculateUrgencia(doc.data_validade);
@@ -132,18 +218,70 @@ export const PendenciasLista = () => {
             entidade_tipo: 'box',
             entidade_id: doc.boxes?.id || '',
             entidade_nome: `${doc.boxes?.codigo || ''} - ${doc.boxes?.inquilino || 'N/A'}`,
+            responsavel_id: doc.boxes?.responsavel_id,
           });
         }
       });
 
-      // 3. Reformas/Manutenções pendentes
-      const { data: manutencoes } = await supabase
+      // 3. Documentos ausentes (verificar quais boxes não têm documentos obrigatórios)
+      let boxesForDocsQuery = supabase
+        .from('boxes')
+        .select('id, codigo, inquilino, responsavel_id, status')
+        .eq('status', 'ASSINADO');
+
+      if (isLojistaView) {
+        boxesForDocsQuery = boxesForDocsQuery.in('id', userBoxIds);
+      }
+
+      const { data: boxesAtivos } = await boxesForDocsQuery;
+
+      if (boxesAtivos) {
+        for (const box of boxesAtivos) {
+          const { data: docsDoBox } = await supabase
+            .from('box_documents')
+            .select('nome, tipo')
+            .eq('box_id', box.id);
+
+          const docsExistentes = docsDoBox?.map(d => d.tipo || d.nome) || [];
+
+          DOCUMENTOS_OBRIGATORIOS.forEach(docObrigatorio => {
+            const temDoc = docsExistentes.some(d => 
+              d.toLowerCase().includes(docObrigatorio.toLowerCase().split(' ')[0])
+            );
+            
+            if (!temDoc) {
+              allPendencias.push({
+                id: `ausente-${box.id}-${docObrigatorio}`,
+                tipo: 'documento_ausente',
+                titulo: docObrigatorio,
+                descricao: `Documento obrigatório não encontrado`,
+                data_vencimento: null,
+                status: 'ausente',
+                urgencia: 'urgente',
+                entidade_tipo: 'box',
+                entidade_id: box.id,
+                entidade_nome: `${box.codigo} - ${box.inquilino || 'N/A'}`,
+                responsavel_id: box.responsavel_id,
+              });
+            }
+          });
+        }
+      }
+
+      // 4. Reformas/Manutenções pendentes
+      let manutencoesQuery = supabase
         .from('box_maintenances')
         .select(`
           id, tipo, descricao, data_solicitacao, status,
-          boxes!box_maintenances_box_id_fkey (id, codigo, inquilino)
+          boxes!box_maintenances_box_id_fkey (id, codigo, inquilino, responsavel_id)
         `)
         .in('status', ['PENDENTE', 'EM_ANDAMENTO']);
+
+      if (isLojistaView) {
+        manutencoesQuery = manutencoesQuery.in('box_id', userBoxIds);
+      }
+
+      const { data: manutencoes } = await manutencoesQuery;
 
       manutencoes?.forEach((m: any) => {
         const dataVenc = m.data_solicitacao ? 
@@ -159,21 +297,28 @@ export const PendenciasLista = () => {
           entidade_tipo: 'box',
           entidade_id: m.boxes?.id || '',
           entidade_nome: `${m.boxes?.codigo || ''} - ${m.boxes?.inquilino || 'N/A'}`,
+          responsavel_id: m.boxes?.responsavel_id,
         });
       });
 
-      // 4. Processos aguardando decisão
-      const { data: pads } = await supabase
+      // 5. Processos aguardando decisão
+      let padsQuery = supabase
         .from('pads')
         .select(`
           id, numero_processo, status, data_autuacao,
+          box_id, responsavel_id,
           boxes (codigo, inquilino),
           responsaveis (nome)
         `)
         .not('status', 'in', '("arquivado","decisao_final")');
 
+      if (isLojistaView) {
+        padsQuery = padsQuery.in('box_id', userBoxIds);
+      }
+
+      const { data: pads } = await padsQuery;
+
       pads?.forEach((p: any) => {
-        // Processos em julgamento/recurso são urgentes
         const isUrgent = ['julgamento', 'recurso'].includes(p.status);
         allPendencias.push({
           id: p.id,
@@ -186,6 +331,7 @@ export const PendenciasLista = () => {
           entidade_tipo: 'pad',
           entidade_id: p.id,
           entidade_nome: `${p.boxes?.codigo || ''} - ${p.responsaveis?.nome || 'N/A'}`,
+          responsavel_id: p.responsavel_id,
         });
       });
 
@@ -213,6 +359,7 @@ export const PendenciasLista = () => {
     vencidos: pendencias?.filter(p => p.urgencia === 'vencido').length || 0,
     urgentes: pendencias?.filter(p => p.urgencia === 'urgente').length || 0,
     proximos: pendencias?.filter(p => p.urgencia === 'proximo').length || 0,
+    documentosAusentes: pendencias?.filter(p => p.tipo === 'documento_ausente').length || 0,
   };
 
   const handleProvidencia = (pendencia: Pendencia) => {
@@ -228,12 +375,19 @@ export const PendenciasLista = () => {
     data_validade: string;
     arquivo_url: string;
   }) => {
-    // Save the providencia with proof
     toast.success('Comprovante anexado! Pendência marcada como "Em Providência"');
     setShowUploadDialog(false);
     setShowProvidenciaDialog(false);
     setSelectedPendencia(null);
     setProvidenciaDescricao('');
+  };
+
+  const handleCreateOcorrencia = () => {
+    // Criar uma pendência manual (ocorrência)
+    toast.success('Ocorrência registrada com sucesso!');
+    setShowOcorrenciaDialog(false);
+    setOcorrenciaData({ box_id: '', titulo: '', descricao: '', data_vencimento: '' });
+    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
   };
 
   if (isLoading) {
@@ -242,8 +396,20 @@ export const PendenciasLista = () => {
 
   return (
     <div className="space-y-6">
+      {/* View indicator for lojista */}
+      {role === 'lojista' && userBoxes?.boxes && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+            <Building2 className="h-5 w-5" />
+            <span className="font-medium">
+              Visualizando pendências dos seus boxes: {userBoxes.boxes.map(b => b.codigo).join(', ')}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -299,15 +465,38 @@ export const PendenciasLista = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="border-purple-500">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <FileX className="h-6 w-6 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Docs Ausentes</p>
+                <p className="text-2xl font-bold text-purple-500">{stats.documentosAusentes}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Pendências
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Pendências
+              {role === 'lojista' && <Badge variant="secondary">Meus Boxes</Badge>}
+            </CardTitle>
+            {(isAdmin || isAdminMaster) && (
+              <Button onClick={() => setShowOcorrenciaDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Ocorrência
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 mb-6">
@@ -328,8 +517,10 @@ export const PendenciasLista = () => {
                 <SelectItem value="all">Todos os Tipos</SelectItem>
                 <SelectItem value="notificacao">Notificações</SelectItem>
                 <SelectItem value="certificado">Certificados</SelectItem>
+                <SelectItem value="documento_ausente">Docs Ausentes</SelectItem>
                 <SelectItem value="reforma">Reformas</SelectItem>
                 <SelectItem value="processo">Processos</SelectItem>
+                <SelectItem value="ocorrencia">Ocorrências</SelectItem>
               </SelectContent>
             </Select>
             <Select value={urgenciaFilter} onValueChange={setUrgenciaFilter}>
@@ -402,7 +593,10 @@ export const PendenciasLista = () => {
               {(!filteredPendencias || filteredPendencias.length === 0) && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Nenhuma pendência encontrada
+                    {role === 'lojista' 
+                      ? 'Nenhuma pendência encontrada para seus boxes'
+                      : 'Nenhuma pendência encontrada'
+                    }
                   </TableCell>
                 </TableRow>
               )}
@@ -448,15 +642,85 @@ export const PendenciasLista = () => {
             <Button onClick={() => {
               toast.success('Pendência marcada como "Em Providência"');
               setShowProvidenciaDialog(false);
+              setSelectedPendencia(null);
+              setProvidenciaDescricao('');
             }}>
-              Confirmar
+              Salvar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Upload Dialog */}
-      {selectedPendencia && (
+      {/* Nova Ocorrência Dialog - Only for Admin */}
+      <Dialog open={showOcorrenciaDialog} onOpenChange={setShowOcorrenciaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Registrar Nova Ocorrência
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Box</Label>
+              <Select
+                value={ocorrenciaData.box_id}
+                onValueChange={(v) => setOcorrenciaData({ ...ocorrenciaData, box_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o box" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allBoxes?.map((box) => (
+                    <SelectItem key={box.id} value={box.id}>
+                      {box.codigo} - {box.inquilino || 'Sem inquilino'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Título da Ocorrência</Label>
+              <Input
+                value={ocorrenciaData.titulo}
+                onChange={(e) => setOcorrenciaData({ ...ocorrenciaData, titulo: e.target.value })}
+                placeholder="Ex: Limpeza pendente"
+              />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Textarea
+                value={ocorrenciaData.descricao}
+                onChange={(e) => setOcorrenciaData({ ...ocorrenciaData, descricao: e.target.value })}
+                placeholder="Descreva a ocorrência..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>Prazo (opcional)</Label>
+              <Input
+                type="date"
+                value={ocorrenciaData.data_vencimento}
+                onChange={(e) => setOcorrenciaData({ ...ocorrenciaData, data_vencimento: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOcorrenciaDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreateOcorrencia}
+              disabled={!ocorrenciaData.box_id || !ocorrenciaData.titulo}
+            >
+              Registrar Ocorrência
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Dialog - Only visible when we have a selected pendencia with an entity */}
+      {showUploadDialog && selectedPendencia?.entidade_id && (
         <DocumentUploadDialog
           open={showUploadDialog}
           onOpenChange={setShowUploadDialog}
