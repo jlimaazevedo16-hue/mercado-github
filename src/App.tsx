@@ -8,6 +8,7 @@ import { UserRoleProvider } from "@/hooks/useUserRole";
 import { UFMSProvider } from "@/contexts/UFMSContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -39,7 +40,8 @@ const App = () => (
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/boxes" element={<ProtectedRoute requiredPermission="boxes"><Index /></ProtectedRoute>} />
                 <Route path="/almoxarifado" element={<ProtectedRoute requiredPermission="almoxarifado"><Almoxarifado /></ProtectedRoute>} />
                 <Route path="/planta-baixa" element={<ProtectedRoute requiredPermission="planta_baixa"><PlantaBaixa /></ProtectedRoute>} />
                 <Route path="/boxes/:id" element={<ProtectedRoute requiredPermission="boxes"><BoxFicha /></ProtectedRoute>} />
