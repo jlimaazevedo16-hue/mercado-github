@@ -26,8 +26,10 @@ interface DocumentUploadDialogProps {
 }
 
 const DOCUMENT_TYPES = [
-  { value: "Contrato", label: "Contrato" },
   { value: "Alvará", label: "Alvará" },
+  { value: "Certificado", label: "Certificado" },
+  { value: "Curso", label: "Curso" },
+  { value: "Contrato", label: "Contrato" },
   { value: "Licença", label: "Licença" },
   { value: "Comprovante", label: "Comprovante" },
   { value: "RG", label: "RG" },
