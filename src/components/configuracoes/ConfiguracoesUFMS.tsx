@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useUFMS } from "@/contexts/UFMSContext";
-import { Settings, Save, Calculator, DollarSign, AlertTriangle, History, CheckCircle } from "lucide-react";
+import { Settings, Save, Calculator, DollarSign, AlertTriangle, CheckCircle, Lock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -28,11 +29,14 @@ export function ConfiguracoesUFMS() {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const { user } = useAuth();
+  const { isAdminMaster, loading: roleLoading } = useUserRole();
   const { invalidateAndRefetch, ufmsValor, fatorCondominio, fatorAluguel, lastUpdated } = useUFMS();
   const queryClient = useQueryClient();
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState<{ id: string; valor: number; chave: string; oldValue: number }[]>([]);
+  const [pendingChanges, setPendingChanges] = useState<{ id: string; valor: number; chave: string; oldValue: number }[]>();
+
+  const canEdit = isAdminMaster;
 
   const { data: configuracoes, isLoading } = useQuery({
     queryKey: ["configuracoes-administrativas"],
@@ -178,7 +182,7 @@ export function ConfiguracoesUFMS() {
     return `${valor} ${unidade || ""}`;
   };
 
-  if (isLoading) {
+  if (isLoading || roleLoading) {
     return (
       <Card>
         <CardContent className="py-8">
@@ -213,15 +217,28 @@ export function ConfiguracoesUFMS() {
         </CardContent>
       </Card>
 
+      {/* Permission Warning */}
+      {!canEdit && (
+        <Alert variant="default" className="border-muted bg-muted/50">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <AlertTitle>Acesso Restrito</AlertTitle>
+          <AlertDescription>
+            Apenas o <strong>Administrador Master</strong> pode alterar os valores da UFMS e fatores de cálculo.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Warning Alert */}
-      <Alert variant="default" className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-800 dark:text-amber-400">Importante</AlertTitle>
-        <AlertDescription className="text-amber-700 dark:text-amber-300">
-          Alterações na UFMS serão aplicadas <strong>apenas a lançamentos futuros</strong>. 
-          Valores já registrados no histórico não serão recalculados.
-        </AlertDescription>
-      </Alert>
+      {canEdit && (
+        <Alert variant="default" className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800 dark:text-amber-400">Importante</AlertTitle>
+          <AlertDescription className="text-amber-700 dark:text-amber-300">
+            Alterações na UFMS serão aplicadas <strong>apenas a lançamentos futuros</strong>. 
+            Valores já registrados no histórico não serão recalculados.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Confirmation Dialog */}
       {showConfirmation && pendingChanges.length > 0 && (
@@ -300,10 +317,11 @@ export function ConfiguracoesUFMS() {
                               }))
                             }
                             className={config.unidade === "R$" ? "pl-9" : ""}
-                            disabled={showConfirmation}
+                            disabled={showConfirmation || !canEdit}
+                            readOnly={!canEdit}
                           />
                         </div>
-                        {editedValues[config.id] !== undefined && !showConfirmation && (
+                        {canEdit && editedValues[config.id] !== undefined && !showConfirmation && (
                           <Button
                             size="icon"
                             onClick={() => handlePrepareChange(config)}

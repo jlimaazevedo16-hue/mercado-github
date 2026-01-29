@@ -833,27 +833,39 @@ export type Database = {
         Row: {
           ativo: boolean | null
           created_at: string
+          data_nascimento: string | null
           email: string
+          foto_url: string | null
           id: string
           nome: string
+          sobrenome: string | null
+          telefone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           ativo?: boolean | null
           created_at?: string
+          data_nascimento?: string | null
           email: string
+          foto_url?: string | null
           id?: string
           nome: string
+          sobrenome?: string | null
+          telefone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           ativo?: boolean | null
           created_at?: string
+          data_nascimento?: string | null
           email?: string
+          foto_url?: string | null
           id?: string
           nome?: string
+          sobrenome?: string | null
+          telefone?: string | null
           updated_at?: string
           user_id?: string
         }
