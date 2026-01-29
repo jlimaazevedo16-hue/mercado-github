@@ -10,9 +10,16 @@ interface Permission {
   can_edit: boolean;
 }
 
+interface UserPermissionOverride {
+  permission_key: string;
+  can_view: boolean;
+  can_edit: boolean;
+}
+
 interface UserRoleContextType {
   role: AppRole | null;
   permissions: Permission[];
+  userOverrides: UserPermissionOverride[];
   loading: boolean;
   isAdmin: boolean;
   isAdminMaster: boolean;
@@ -26,12 +33,14 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [role, setRole] = useState<AppRole | null>(null);
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [userOverrides, setUserOverrides] = useState<UserPermissionOverride[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchRoleAndPermissions = async () => {
     if (!user) {
       setRole(null);
       setPermissions([]);
+      setUserOverrides([]);
       setLoading(false);
       return;
     }
@@ -66,10 +75,24 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setPermissions(permData || []);
       }
+
+      // Fetch user-specific permission overrides
+      const { data: overrideData, error: overrideError } = await supabase
+        .from('user_permissions')
+        .select('permission_key, can_view, can_edit')
+        .eq('user_id', user.id);
+
+      if (overrideError) {
+        console.error('Error fetching user overrides:', overrideError);
+        setUserOverrides([]);
+      } else {
+        setUserOverrides(overrideData || []);
+      }
     } catch (error) {
       console.error('Error in fetchRoleAndPermissions:', error);
       setRole('administrador_master');
       setPermissions([]);
+      setUserOverrides([]);
     } finally {
       setLoading(false);
     }
@@ -83,6 +106,13 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
     // Admin master has full access to everything
     if (role === 'administrador_master') return true;
     
+    // Check for user-specific override first
+    const override = userOverrides.find(o => o.permission_key === key);
+    if (override) {
+      return action === 'view' ? override.can_view : override.can_edit;
+    }
+    
+    // Fall back to role permissions
     const perm = permissions.find(p => p.permission_key === key);
     if (!perm) return false;
     return action === 'view' ? perm.can_view : perm.can_edit;
@@ -93,6 +123,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
       value={{ 
         role, 
         permissions, 
+        userOverrides,
         loading, 
         isAdmin: role === 'administrador' || role === 'administrador_master',
         isAdminMaster: role === 'administrador_master',

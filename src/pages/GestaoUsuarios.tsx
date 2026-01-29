@@ -15,9 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
-import { UserPlus, Shield, Users, History, Edit, Trash2, Search } from "lucide-react";
+import { UserPermissionsDialog } from "@/components/gestao-usuarios/UserPermissionsDialog";
+import { UserPlus, Shield, Users, History, Search, Settings2 } from "lucide-react";
 
-type AppRole = 'administrador' | 'fiscal' | 'funcionario';
+type AppRole = 'administrador' | 'administrador_master' | 'fiscal' | 'funcionario' | 'lojista';
 
 interface Profile {
   id: string;
@@ -50,9 +51,11 @@ interface AuditLog {
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {
+  administrador_master: 'Administrador Master',
   administrador: 'Administrador',
   fiscal: 'Fiscal',
-  funcionario: 'Funcionário'
+  funcionario: 'Funcionário',
+  lojista: 'Lojista'
 };
 
 const PERMISSION_LABELS: Record<string, string> = {
@@ -63,15 +66,30 @@ const PERMISSION_LABELS: Record<string, string> = {
   documentos: 'Documentos',
   almoxarifado: 'Almoxarifado',
   observatorio: 'Observatório',
-  gestao_usuarios: 'Gestão de Usuários'
+  notificacoes: 'Notificações',
+  pads: 'PAD',
+  pendencias: 'Pendências',
+  frequencia: 'Frequência',
+  whatsapp: 'WhatsApp',
+  financeiro: 'Financeiro',
+  configuracoes: 'Configurações',
+  gestao_usuarios: 'Gestão de Usuários',
+  relatorios: 'Relatórios'
 };
 
 export default function GestaoUsuarios() {
   const [activeItem, setActiveItem] = useState("gestao-usuarios");
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<{
+    id: string;
+    user_id: string;
+    nome: string;
+    email: string;
+    role: string;
+  } | null>(null);
   const [newUserData, setNewUserData] = useState({ nome: '', email: '', password: '', role: 'funcionario' as AppRole });
   
   const { toast } = useToast();
@@ -462,9 +480,26 @@ export default function GestaoUsuarios() {
                                 {new Date(user.created_at).toLocaleDateString('pt-BR')}
                               </TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="icon">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    title="Permissões granulares"
+                                    onClick={() => {
+                                      const userRole = user.user_roles?.[0]?.role || 'funcionario';
+                                      setSelectedUserForPermissions({
+                                        id: user.id,
+                                        user_id: user.user_id,
+                                        nome: user.nome,
+                                        email: user.email,
+                                        role: userRole
+                                      });
+                                      setIsPermissionsDialogOpen(true);
+                                    }}
+                                  >
+                                    <Settings2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -590,6 +625,13 @@ export default function GestaoUsuarios() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* User Permissions Dialog */}
+            <UserPermissionsDialog
+              open={isPermissionsDialogOpen}
+              onOpenChange={setIsPermissionsDialogOpen}
+              user={selectedUserForPermissions}
+            />
           </div>
         </main>
       </div>
