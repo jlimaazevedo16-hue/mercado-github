@@ -49,6 +49,8 @@ const BoxFicha = () => {
   const [maintDialogOpen, setMaintDialogOpen] = useState(false);
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
 
+  const isNewBox = id === "novo";
+
   const { data: box, isLoading, isError, error } = useQuery({
     queryKey: ["box", id],
     queryFn: async () => {
@@ -157,8 +159,11 @@ const BoxFicha = () => {
   useEffect(() => {
     if (box) {
       setFormData(box);
+    } else if (isNewBox) {
+      setFormData({ status: "DISPONIVEL" });
+      setIsEditing(true);
     }
-  }, [box]);
+  }, [box, isNewBox]);
 
   const updateBoxMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -300,8 +305,39 @@ const BoxFicha = () => {
       toast.success("Status atualizado!");
     },
   });
+  const createBoxMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const { data: newBox, error } = await supabase
+        .from("boxes")
+        .insert({
+          codigo: data.codigo,
+          boxe: data.boxe,
+          setor_id: data.setor_id || null,
+          segmento_id: data.segmento_id || null,
+          inquilino: data.inquilino || null,
+          area_m2: data.area_m2 ? parseFloat(data.area_m2) : null,
+          atividades: data.atividades || null,
+          status: data.status || "DISPONIVEL",
+          responsavel_id: data.responsavel_id || null,
+          imagem_url: data.imagem_url || null,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return newBox;
+    },
+    onSuccess: (newBox) => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-boxes"] });
+      toast.success("Box cadastrado com sucesso!");
+      navigate(`/boxes/${newBox.id}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao cadastrar box. Verifique se está autenticado.");
+    },
+  });
 
-  if (isLoading) {
+  if (!isNewBox && isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -312,7 +348,7 @@ const BoxFicha = () => {
     );
   }
 
-  if (isError) {
+  if (!isNewBox && isError) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -324,7 +360,7 @@ const BoxFicha = () => {
     );
   }
 
-  if (!box) {
+  if (!isNewBox && !box) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -348,14 +384,18 @@ const BoxFicha = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Ficha Cadastral do Box</h1>
-              <p className="text-muted-foreground">
-                {box.codigo} - {box.boxe}
-              </p>
+              <h1 className="text-2xl font-bold">
+                {isNewBox ? "Cadastrar Novo Box" : "Ficha Cadastral do Box"}
+              </h1>
+              {!isNewBox && box && (
+                <p className="text-muted-foreground">
+                  {box.codigo} - {box.boxe}
+                </p>
+              )}
             </div>
             <div className="ml-auto flex gap-2">
               {/* WhatsApp Button */}
-              {(box as any).responsaveis?.telefone && (
+              {!isNewBox && (box as any)?.responsaveis?.telefone && (
                 <Button 
                   variant="outline" 
                   onClick={() => setWhatsappDialogOpen(true)}
@@ -366,7 +406,20 @@ const BoxFicha = () => {
                 </Button>
               )}
               
-              {isEditing ? (
+              {isNewBox ? (
+                <>
+                  <Button variant="outline" onClick={() => navigate(-1)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={() => createBoxMutation.mutate(formData)}
+                    disabled={!formData.codigo || !formData.boxe || createBoxMutation.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {createBoxMutation.isPending ? "Salvando..." : "Cadastrar Box"}
+                  </Button>
+                </>
+              ) : isEditing ? (
                 <>
                   <Button variant="outline" onClick={() => { setIsEditing(false); setFormData(box); }}>
                     Cancelar
@@ -386,7 +439,7 @@ const BoxFicha = () => {
           </div>
 
           {/* WhatsApp Dialog */}
-          {(box as any).responsaveis && (
+          {!isNewBox && (box as any)?.responsaveis && (
             <WhatsAppSendDialog
               open={whatsappDialogOpen}
               onOpenChange={setWhatsappDialogOpen}
@@ -405,22 +458,26 @@ const BoxFicha = () => {
                 <Building2 className="h-4 w-4" />
                 Dados Gerais
               </TabsTrigger>
-              <TabsTrigger value="notificacoes" className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Notificações / PAD
-              </TabsTrigger>
-              <TabsTrigger value="documentos" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Documentos ({documents?.length || 0})
-              </TabsTrigger>
-              <TabsTrigger value="manutencoes" className="flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
-                Manutenções ({maintenances?.length || 0})
-              </TabsTrigger>
-              <TabsTrigger value="historico" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                Histórico ({history?.length || 0})
-              </TabsTrigger>
+              {!isNewBox && (
+                <>
+                  <TabsTrigger value="notificacoes" className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Notificações / PAD
+                  </TabsTrigger>
+                  <TabsTrigger value="documentos" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Documentos ({documents?.length || 0})
+                  </TabsTrigger>
+                  <TabsTrigger value="manutencoes" className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4" />
+                    Manutenções ({maintenances?.length || 0})
+                  </TabsTrigger>
+                  <TabsTrigger value="historico" className="flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    Histórico ({history?.length || 0})
+                  </TabsTrigger>
+                </>
+              )}
             </TabsList>
 
             <TabsContent value="dados">
@@ -434,15 +491,15 @@ const BoxFicha = () => {
                     <PhotoUpload
                       currentPhotoUrl={formData.imagem_url}
                       onPhotoChange={(url) => setFormData({ ...formData, imagem_url: url })}
-                      isEditing={isEditing}
+                      isEditing={isEditing || isNewBox}
                       entityType="box"
-                      entityId={id}
-                      entityName={box.boxe}
+                      entityId={isNewBox ? "novo" : id}
+                      entityName={formData.boxe || "Novo Box"}
                       size="lg"
                     />
                     
                     {/* Responsável Photo Section */}
-                    {(box as any).responsaveis && (
+                    {!isNewBox && (box as any)?.responsaveis && (
                       <div className="mt-6 pt-6 border-t w-full">
                         <p className="text-sm font-medium text-center mb-4">Responsável Vinculado</p>
                         <div className="flex flex-col items-center gap-2">
