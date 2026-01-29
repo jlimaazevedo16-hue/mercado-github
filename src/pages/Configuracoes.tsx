@@ -4,7 +4,8 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfiguracoesUFMS } from "@/components/configuracoes/ConfiguracoesUFMS";
 import { ExtracaoMensal } from "@/components/configuracoes/ExtracaoMensal";
-import { Settings, FileSpreadsheet, Calculator } from "lucide-react";
+import { SegmentosManager } from "@/components/configuracoes/SegmentosManager";
+import { Settings, FileSpreadsheet, Calculator, Tag } from "lucide-react";
 
 export default function Configuracoes() {
   const [activeItem, setActiveItem] = useState("configuracoes");
@@ -23,7 +24,7 @@ export default function Configuracoes() {
               <div>
                 <h1 className="text-2xl font-bold">Configurações Administrativas</h1>
                 <p className="text-muted-foreground">
-                  Gerencie valores UFMS, fatores de cálculo e extrações mensais
+                  Gerencie valores UFMS, fatores de cálculo, segmentos e extrações mensais
                 </p>
               </div>
             </div>
@@ -34,6 +35,10 @@ export default function Configuracoes() {
                   <Calculator className="h-4 w-4" />
                   UFMS e Fatores
                 </TabsTrigger>
+                <TabsTrigger value="segmentos" className="gap-2">
+                  <Tag className="h-4 w-4" />
+                  Segmentos
+                </TabsTrigger>
                 <TabsTrigger value="extracao" className="gap-2">
                   <FileSpreadsheet className="h-4 w-4" />
                   Extração Mensal
@@ -42,6 +47,10 @@ export default function Configuracoes() {
 
               <TabsContent value="ufms">
                 <ConfiguracoesUFMS />
+              </TabsContent>
+
+              <TabsContent value="segmentos">
+                <SegmentosManager />
               </TabsContent>
 
               <TabsContent value="extracao">
