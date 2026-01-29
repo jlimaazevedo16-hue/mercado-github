@@ -1,14 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { DollarSign, TrendingUp, AlertTriangle, Building2 } from "lucide-react";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useUFMS } from "@/contexts/UFMSContext";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export const FinancialDashboard = () => {
+  // Use global UFMS context for real-time updates
+  const { ufmsValor, fatorCondominio, fatorAluguel, taxaCondominio, isLoading: ufmsLoading } = useUFMS();
+
   // Fetch boxes with area
   const { data: boxes = [] } = useQuery({
     queryKey: ['financial-boxes'],
@@ -16,18 +20,6 @@ export const FinancialDashboard = () => {
       const { data, error } = await supabase
         .from('boxes')
         .select('id, codigo, setor, area_m2, status, responsavel_id');
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  // Fetch configuration values
-  const { data: configs = [] } = useQuery({
-    queryKey: ['financial-configs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('configuracoes_administrativas')
-        .select('*');
       if (error) throw error;
       return data || [];
     }
@@ -60,15 +52,9 @@ export const FinancialDashboard = () => {
     }
   });
 
-  // Get config values
-  const ufmsValor = configs.find(c => c.chave === 'ufms_valor')?.valor || 0;
-  const fatorCondominio = configs.find(c => c.chave === 'fator_condominio')?.valor || 0;
-  const fatorAluguel = configs.find(c => c.chave === 'fator_aluguel')?.valor || 0;
-
-  // Calculate totals
+  // Calculate totals using global UFMS values
   const boxesAtivos = boxes.filter(b => b.status === 'ASSINADO');
   const totalAreaM2 = boxesAtivos.reduce((acc, b) => acc + Number(b.area_m2 || 0), 0);
-  const taxaCondominio = ufmsValor * fatorCondominio;
   const totalCondominio = boxesAtivos.length * taxaCondominio;
   const totalAluguel = totalAreaM2 * (ufmsValor * fatorAluguel);
   const totalReceitaMensal = totalCondominio + totalAluguel;
@@ -136,6 +122,14 @@ export const FinancialDashboard = () => {
   const percentualInadimplencia = boxesAtivos.length > 0 
     ? ((boxesComMulta / boxesAtivos.length) * 100).toFixed(1) 
     : '0';
+
+  if (ufmsLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -285,7 +279,7 @@ export const FinancialDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">Valor UFMS</p>
-              <p className="text-xl font-bold">R$ {Number(ufmsValor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-xl font-bold">R$ {ufmsValor.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}</p>
             </div>
             <div className="p-4 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">Fator Condomínio</p>

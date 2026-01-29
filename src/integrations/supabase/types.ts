@@ -1194,6 +1194,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ufms_historico: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_fim_vigencia: string | null
+          data_inicio_vigencia: string
+          fator_aluguel: number
+          fator_condominio: number
+          id: string
+          ufms_valor: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_fim_vigencia?: string | null
+          data_inicio_vigencia?: string
+          fator_aluguel: number
+          fator_condominio: number
+          id?: string
+          ufms_valor: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_fim_vigencia?: string | null
+          data_inicio_vigencia?: string
+          fator_aluguel?: number
+          fator_condominio?: number
+          id?: string
+          ufms_valor?: number
+        }
+        Relationships: []
+      }
       user_permissions: {
         Row: {
           can_edit: boolean | null
