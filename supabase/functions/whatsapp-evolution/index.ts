@@ -7,13 +7,44 @@ const corsHeaders = {
 };
 
 interface RequestBody {
-  action: "generate_qr" | "check_status" | "disconnect" | "send_message" | "process_queue";
+  action: "generate_qr" | "check_status" | "disconnect" | "send_message" | "process_queue" | "test_connection" | "retry_message";
   instance_id?: string;
   api_url?: string;
   api_key?: string;
   instance_name?: string;
   phone?: string;
   message?: string;
+  queue_id?: string;
+}
+
+interface WhatsAppConfig {
+  intervalo_min_segundos: number;
+  intervalo_max_segundos: number;
+  max_mensagens_lote: number;
+  espera_entre_lotes_minutos: number;
+  hora_inicio_envio: string;
+  hora_fim_envio: string;
+  max_tentativas: number;
+}
+
+// Helper: Check if current time is within allowed hours
+function isWithinAllowedHours(horaInicio: string, horaFim: string): boolean {
+  const now = new Date();
+  const currentTime = now.toTimeString().slice(0, 5); // "HH:MM"
+  
+  const inicio = horaInicio?.slice(0, 5) || "08:00";
+  const fim = horaFim?.slice(0, 5) || "18:00";
+  
+  return currentTime >= inicio && currentTime <= fim;
+}
+
+// Helper: Format phone number for Brazil
+function formatPhoneNumber(phone: string): string {
+  let formatted = phone.replace(/\D/g, "");
+  if (!formatted.startsWith("55")) {
+    formatted = "55" + formatted;
+  }
+  return formatted;
 }
 
 serve(async (req) => {
@@ -28,13 +59,47 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: RequestBody = await req.json();
-    const { action, instance_id, api_url, api_key, instance_name, phone, message } = body;
+    const { action, instance_id, api_url, api_key, instance_name, phone, message, queue_id } = body;
+
+    console.log(`WhatsApp Evolution: Action ${action} requested`);
 
     switch (action) {
+      case "test_connection": {
+        if (!api_url || !api_key) {
+          throw new Error("URL e API Key são obrigatórios");
+        }
+
+        try {
+          const response = await fetch(`${api_url}/instance/fetchInstances`, {
+            method: "GET",
+            headers: {
+              "apikey": api_key,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+          }
+
+          return new Response(
+            JSON.stringify({ success: true, message: "Conexão estabelecida com sucesso" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : "Falha na conexão";
+          return new Response(
+            JSON.stringify({ success: false, error: errorMsg }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          );
+        }
+      }
+
       case "generate_qr": {
         if (!api_url || !api_key || !instance_name) {
           throw new Error("Dados da instância incompletos");
         }
+
+        console.log(`Generating QR for instance: ${instance_name}`);
 
         // Create instance on Evolution API
         const createResponse = await fetch(`${api_url}/instance/create`, {
@@ -52,6 +117,7 @@ serve(async (req) => {
 
         if (!createResponse.ok) {
           // Instance might already exist, try to connect
+          console.log("Instance may exist, trying to connect...");
           const connectResponse = await fetch(`${api_url}/instance/connect/${instance_name}`, {
             method: "GET",
             headers: {
@@ -61,9 +127,10 @@ serve(async (req) => {
 
           if (connectResponse.ok) {
             const connectData = await connectResponse.json();
+            const qrcode = connectData.base64 || connectData.qrcode?.base64;
             return new Response(
               JSON.stringify({ 
-                qrcode: connectData.base64 || connectData.qrcode?.base64,
+                qrcode,
                 status: "waiting_qr" 
               }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -73,6 +140,7 @@ serve(async (req) => {
         }
 
         const createData = await createResponse.json();
+        console.log("Instance created successfully");
         return new Response(
           JSON.stringify({ 
             qrcode: createData.qrcode?.base64 || createData.base64,
@@ -105,14 +173,30 @@ serve(async (req) => {
         const state = statusData.instance?.state || statusData.state;
         
         let status = "disconnected";
+        let phoneNumber = null;
+
         if (state === "open" || state === "connected") {
           status = "connected";
+          // Try to get phone number
+          try {
+            const infoResponse = await fetch(`${api_url}/instance/fetchInstances`, {
+              method: "GET",
+              headers: { "apikey": api_key },
+            });
+            if (infoResponse.ok) {
+              const instances = await infoResponse.json();
+              const instance = instances.find((i: any) => i.name === instance_name);
+              phoneNumber = instance?.ownerJid?.split("@")[0] || null;
+            }
+          } catch (e) {
+            console.log("Could not fetch phone number");
+          }
         } else if (state === "connecting") {
           status = "waiting_qr";
         }
 
         return new Response(
-          JSON.stringify({ status }),
+          JSON.stringify({ status, phoneNumber }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -140,11 +224,8 @@ serve(async (req) => {
           throw new Error("Dados para envio incompletos");
         }
 
-        // Format phone number (remove non-digits, ensure country code)
-        let formattedPhone = phone.replace(/\D/g, "");
-        if (!formattedPhone.startsWith("55")) {
-          formattedPhone = "55" + formattedPhone;
-        }
+        const formattedPhone = formatPhoneNumber(phone);
+        console.log(`Sending message to ${formattedPhone}`);
 
         const sendResponse = await fetch(`${api_url}/message/sendText/${instance_name}`, {
           method: "POST",
@@ -161,6 +242,7 @@ serve(async (req) => {
         const sendData = await sendResponse.json();
 
         if (!sendResponse.ok) {
+          console.error("Send message error:", sendData);
           return new Response(
             JSON.stringify({ 
               success: false, 
@@ -171,8 +253,43 @@ serve(async (req) => {
           );
         }
 
+        console.log("Message sent successfully");
         return new Response(
           JSON.stringify({ success: true, response: sendData }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case "retry_message": {
+        if (!queue_id) {
+          throw new Error("ID da mensagem não fornecido");
+        }
+
+        // Get the message from queue
+        const { data: queueItem, error: fetchError } = await supabase
+          .from("whatsapp_queue")
+          .select(`
+            *,
+            whatsapp_instances (api_url, api_key, instance_name, status)
+          `)
+          .eq("id", queue_id)
+          .single();
+
+        if (fetchError || !queueItem) {
+          throw new Error("Mensagem não encontrada na fila");
+        }
+
+        // Reset status to pending for reprocessing
+        await supabase
+          .from("whatsapp_queue")
+          .update({ 
+            status: "pendente", 
+            erro_mensagem: null 
+          })
+          .eq("id", queue_id);
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Mensagem reenfileirada para reprocessamento" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -185,23 +302,47 @@ serve(async (req) => {
           .limit(1)
           .single();
 
-        const intervaloMin = config?.intervalo_min_segundos || 5;
-        const intervaloMax = config?.intervalo_max_segundos || 10;
-        const maxLote = config?.max_mensagens_lote || 30;
+        const configData: WhatsAppConfig = {
+          intervalo_min_segundos: config?.intervalo_min_segundos || 5,
+          intervalo_max_segundos: config?.intervalo_max_segundos || 10,
+          max_mensagens_lote: config?.max_mensagens_lote || 30,
+          espera_entre_lotes_minutos: config?.espera_entre_lotes_minutos || 5,
+          hora_inicio_envio: config?.hora_inicio_envio || "08:00:00",
+          hora_fim_envio: config?.hora_fim_envio || "18:00:00",
+          max_tentativas: config?.max_tentativas || 3,
+        };
 
-        // Get pending messages
+        // Check allowed hours
+        if (!isWithinAllowedHours(configData.hora_inicio_envio, configData.hora_fim_envio)) {
+          console.log("Outside allowed hours, skipping processing");
+          return new Response(
+            JSON.stringify({ 
+              processed: 0, 
+              message: `Fora do horário permitido (${configData.hora_inicio_envio} - ${configData.hora_fim_envio})`,
+              skipped: true
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Get pending messages (not exceeding max attempts)
         const { data: pendingMessages, error: queueError } = await supabase
           .from("whatsapp_queue")
           .select(`
             *,
-            whatsapp_instances (api_url, api_key, instance_name, status)
+            whatsapp_instances (id, api_url, api_key, instance_name, status)
           `)
           .eq("status", "pendente")
+          .lt("tentativas", configData.max_tentativas)
           .or(`agendado_para.is.null,agendado_para.lte.${new Date().toISOString()}`)
           .order("created_at", { ascending: true })
-          .limit(maxLote);
+          .limit(configData.max_mensagens_lote);
 
-        if (queueError) throw queueError;
+        if (queueError) {
+          console.error("Queue fetch error:", queueError);
+          throw queueError;
+        }
+
         if (!pendingMessages || pendingMessages.length === 0) {
           return new Response(
             JSON.stringify({ processed: 0, message: "Nenhuma mensagem pendente" }),
@@ -209,13 +350,17 @@ serve(async (req) => {
           );
         }
 
+        console.log(`Processing ${pendingMessages.length} messages`);
+
         let processed = 0;
         let errors = 0;
 
         for (const msg of pendingMessages) {
           const instance = msg.whatsapp_instances;
+          
+          // Check if instance is connected
           if (!instance || instance.status !== "connected") {
-            // Update as error
+            console.log(`Instance not connected for message ${msg.id}`);
             await supabase
               .from("whatsapp_queue")
               .update({ 
@@ -224,6 +369,19 @@ serve(async (req) => {
                 tentativas: msg.tentativas + 1
               })
               .eq("id", msg.id);
+
+            await supabase.from("whatsapp_logs").insert({
+              queue_id: msg.id,
+              instance_id: msg.instance_id,
+              template_id: msg.template_id,
+              destinatario_telefone: msg.destinatario_telefone,
+              destinatario_nome: msg.destinatario_nome,
+              conteudo: msg.conteudo,
+              status: "erro",
+              resposta_api: { error: "Instância não conectada" },
+              enviado_por: msg.created_by,
+            });
+
             errors++;
             continue;
           }
@@ -235,7 +393,10 @@ serve(async (req) => {
             .eq("id", msg.id);
 
           try {
-            // Send message
+            // Format phone number
+            const formattedPhone = formatPhoneNumber(msg.destinatario_telefone);
+
+            // Send message via Evolution API
             const sendResponse = await fetch(`${instance.api_url}/message/sendText/${instance.instance_name}`, {
               method: "POST",
               headers: {
@@ -243,7 +404,7 @@ serve(async (req) => {
                 "apikey": instance.api_key,
               },
               body: JSON.stringify({
-                number: msg.destinatario_telefone.replace(/\D/g, ""),
+                number: formattedPhone,
                 text: msg.conteudo,
               }),
             });
@@ -251,13 +412,18 @@ serve(async (req) => {
             const sendData = await sendResponse.json();
 
             if (sendResponse.ok) {
+              console.log(`Message ${msg.id} sent successfully`);
+              
               // Update queue as sent
               await supabase
                 .from("whatsapp_queue")
-                .update({ status: "enviado" })
+                .update({ 
+                  status: "enviado",
+                  tentativas: msg.tentativas + 1
+                })
                 .eq("id", msg.id);
 
-              // Create log
+              // Create success log
               await supabase.from("whatsapp_logs").insert({
                 queue_id: msg.id,
                 instance_id: msg.instance_id,
@@ -272,17 +438,21 @@ serve(async (req) => {
 
               processed++;
             } else {
-              throw new Error(sendData.message || "Erro na API");
+              throw new Error(sendData.message || sendData.error || "Erro na API Evolution");
             }
           } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+            console.error(`Error sending message ${msg.id}:`, errorMessage);
             
+            const newAttempts = msg.tentativas + 1;
+            const finalStatus = newAttempts >= configData.max_tentativas ? "erro" : "pendente";
+
             await supabase
               .from("whatsapp_queue")
               .update({ 
-                status: "erro", 
+                status: finalStatus, 
                 erro_mensagem: errorMessage,
-                tentativas: msg.tentativas + 1
+                tentativas: newAttempts
               })
               .eq("id", msg.id);
 
@@ -295,20 +465,27 @@ serve(async (req) => {
               destinatario_nome: msg.destinatario_nome,
               conteudo: msg.conteudo,
               status: "erro",
-              resposta_api: { error: errorMessage },
+              resposta_api: { error: errorMessage, attempt: newAttempts },
               enviado_por: msg.created_by,
             });
 
             errors++;
           }
 
-          // Wait random interval between messages
-          const delay = Math.floor(Math.random() * (intervaloMax - intervaloMin + 1)) + intervaloMin;
+          // Wait random interval between messages (anti-ban)
+          const delay = Math.floor(Math.random() * (configData.intervalo_max_segundos - configData.intervalo_min_segundos + 1)) + configData.intervalo_min_segundos;
+          console.log(`Waiting ${delay}s before next message`);
           await new Promise((resolve) => setTimeout(resolve, delay * 1000));
         }
 
+        console.log(`Queue processing complete: ${processed} sent, ${errors} errors`);
         return new Response(
-          JSON.stringify({ processed, errors, total: pendingMessages.length }),
+          JSON.stringify({ 
+            processed, 
+            errors, 
+            total: pendingMessages.length,
+            message: `Processadas ${processed} mensagens, ${errors} erros`
+          }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
