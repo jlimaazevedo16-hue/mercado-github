@@ -66,14 +66,14 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, destinatario }: WhatsAp
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      const template = templates?.find((t) => t.id === templateId);
+      const template = templateId !== "custom" ? templates?.find((t) => t.id === templateId) : null;
       const conteudo = template 
         ? template.conteudo.replace("{{nome}}", destinatario.nome)
         : customMessage;
 
       const { error } = await supabase.from("whatsapp_queue").insert({
         instance_id: instanceId,
-        template_id: templateId || null,
+        template_id: templateId !== "custom" ? templateId : null,
         destinatario_telefone: destinatario.telefone,
         destinatario_nome: destinatario.nome,
         responsavel_id: destinatario.responsavel_id || null,
@@ -103,6 +103,10 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, destinatario }: WhatsAp
 
   const handleTemplateChange = (id: string) => {
     setTemplateId(id);
+    if (id === "custom") {
+      setCustomMessage("");
+      return;
+    }
     const template = templates?.find((t) => t.id === id);
     if (template) {
       setCustomMessage(template.conteudo.replace("{{nome}}", destinatario.nome));
@@ -112,6 +116,10 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, destinatario }: WhatsAp
   const handleSend = () => {
     if (!instanceId) {
       toast.error("Selecione uma instância");
+      return;
+    }
+    if (templateId === "custom" && !customMessage.trim()) {
+      toast.error("Digite uma mensagem personalizada");
       return;
     }
     if (!templateId && !customMessage.trim()) {
@@ -147,7 +155,7 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, destinatario }: WhatsAp
                 <SelectValue placeholder="Selecione a instância" />
               </SelectTrigger>
               <SelectContent>
-                {instances?.map((inst) => (
+                {instances?.filter((inst) => inst.id).map((inst) => (
                   <SelectItem key={inst.id} value={inst.id}>
                     {inst.nome}
                   </SelectItem>
@@ -169,8 +177,8 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, destinatario }: WhatsAp
                 <SelectValue placeholder="Selecione um template" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Mensagem personalizada</SelectItem>
-                {templates?.map((tpl) => (
+                <SelectItem value="custom">Mensagem personalizada</SelectItem>
+                {templates?.filter((tpl) => tpl.id).map((tpl) => (
                   <SelectItem key={tpl.id} value={tpl.id}>
                     {tpl.nome}
                   </SelectItem>
