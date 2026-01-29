@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Loader2, Save, Shield, Info } from "lucide-react";
+import { Settings, Loader2, Save, Shield, Info, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 interface Config {
@@ -14,6 +14,9 @@ interface Config {
   intervalo_max_segundos: number;
   max_mensagens_lote: number;
   espera_entre_lotes_minutos: number;
+  hora_inicio_envio: string;
+  hora_fim_envio: string;
+  max_tentativas: number;
 }
 
 export const WhatsAppConfig = () => {
@@ -23,6 +26,9 @@ export const WhatsAppConfig = () => {
     intervalo_max_segundos: 10,
     max_mensagens_lote: 30,
     espera_entre_lotes_minutos: 5,
+    hora_inicio_envio: "08:00",
+    hora_fim_envio: "18:00",
+    max_tentativas: 3,
   });
 
   const { data: config, isLoading } = useQuery({
@@ -46,20 +52,29 @@ export const WhatsAppConfig = () => {
         intervalo_max_segundos: config.intervalo_max_segundos,
         max_mensagens_lote: config.max_mensagens_lote,
         espera_entre_lotes_minutos: config.espera_entre_lotes_minutos,
+        hora_inicio_envio: config.hora_inicio_envio?.slice(0, 5) || "08:00",
+        hora_fim_envio: config.hora_fim_envio?.slice(0, 5) || "18:00",
+        max_tentativas: config.max_tentativas || 3,
       });
     }
   }, [config]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const payload = {
+        ...data,
+        hora_inicio_envio: data.hora_inicio_envio + ":00",
+        hora_fim_envio: data.hora_fim_envio + ":00",
+      };
+
       if (config?.id) {
         const { error } = await supabase
           .from("whatsapp_config")
-          .update(data)
+          .update(payload)
           .eq("id", config.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("whatsapp_config").insert(data);
+        const { error } = await supabase.from("whatsapp_config").insert(payload);
         if (error) throw error;
       }
     },
@@ -173,6 +188,81 @@ export const WhatsAppConfig = () => {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Tempo de pausa após cada lote de mensagens (recomendado: 5min)
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="max_tentativas">Máximo de Tentativas por Mensagem</Label>
+              <Input
+                id="max_tentativas"
+                type="number"
+                min={1}
+                max={10}
+                value={formData.max_tentativas}
+                onChange={(e) =>
+                  setFormData({ ...formData, max_tentativas: parseInt(e.target.value) || 3 })
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Número de tentativas antes de marcar como erro definitivo
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Horário Permitido de Envio
+          </CardTitle>
+          <CardDescription>
+            Defina o horário em que as mensagens podem ser enviadas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-start gap-2">
+              <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-800 dark:text-blue-200">
+                <p className="font-medium mb-1">Horário comercial</p>
+                <p>
+                  Mensagens fora do horário permitido serão mantidas na fila e enviadas
+                  quando o horário permitido começar. Evite envios noturnos.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="hora_inicio">Horário de Início</Label>
+              <Input
+                id="hora_inicio"
+                type="time"
+                value={formData.hora_inicio_envio}
+                onChange={(e) =>
+                  setFormData({ ...formData, hora_inicio_envio: e.target.value })
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Início do período permitido (recomendado: 08:00)
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="hora_fim">Horário de Fim</Label>
+              <Input
+                id="hora_fim"
+                type="time"
+                value={formData.hora_fim_envio}
+                onChange={(e) =>
+                  setFormData({ ...formData, hora_fim_envio: e.target.value })
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Fim do período permitido (recomendado: 18:00)
               </p>
             </div>
           </div>

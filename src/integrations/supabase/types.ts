@@ -1222,28 +1222,37 @@ export type Database = {
         Row: {
           created_at: string
           espera_entre_lotes_minutos: number
+          hora_fim_envio: string | null
+          hora_inicio_envio: string | null
           id: string
           intervalo_max_segundos: number
           intervalo_min_segundos: number
           max_mensagens_lote: number
+          max_tentativas: number | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           espera_entre_lotes_minutos?: number
+          hora_fim_envio?: string | null
+          hora_inicio_envio?: string | null
           id?: string
           intervalo_max_segundos?: number
           intervalo_min_segundos?: number
           max_mensagens_lote?: number
+          max_tentativas?: number | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           espera_entre_lotes_minutos?: number
+          hora_fim_envio?: string | null
+          hora_inicio_envio?: string | null
           id?: string
           intervalo_max_segundos?: number
           intervalo_min_segundos?: number
           max_mensagens_lote?: number
+          max_tentativas?: number | null
           updated_at?: string
         }
         Relationships: []
