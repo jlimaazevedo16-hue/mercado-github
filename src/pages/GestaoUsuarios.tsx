@@ -13,10 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { useUserRole } from "@/hooks/useUserRole";
 import { UserPermissionsDialog } from "@/components/gestao-usuarios/UserPermissionsDialog";
-import { UserPlus, Shield, Users, History, Search, Settings2 } from "lucide-react";
+import { UserPlus, Shield, Users, History, Search, Settings2, Lock, AlertTriangle } from "lucide-react";
 
 type AppRole = 'administrador' | 'administrador_master' | 'fiscal' | 'funcionario' | 'lojista';
 
@@ -94,6 +96,7 @@ export default function GestaoUsuarios() {
   
   const { toast } = useToast();
   const { logAction } = useAuditLog();
+  const { isAdminMaster } = useUserRole();
   const queryClient = useQueryClient();
 
   // Fetch users with their roles
@@ -340,18 +343,19 @@ export default function GestaoUsuarios() {
               <TabsContent value="usuarios" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                       <div>
                         <CardTitle>Usuários do Sistema</CardTitle>
                         <CardDescription>Lista de todos os usuários cadastrados</CardDescription>
                       </div>
-                      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button className="gap-2">
-                            <UserPlus className="h-4 w-4" />
-                            Novo Usuário
-                          </Button>
-                        </DialogTrigger>
+                      {isAdminMaster && (
+                        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="gap-2">
+                              <UserPlus className="h-4 w-4" />
+                              Novo Usuário
+                            </Button>
+                          </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Criar Novo Usuário</DialogTitle>
@@ -410,6 +414,7 @@ export default function GestaoUsuarios() {
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -447,21 +452,29 @@ export default function GestaoUsuarios() {
                               <TableCell className="font-medium">{user.nome}</TableCell>
                               <TableCell>{user.email}</TableCell>
                               <TableCell>
-                                <Select
-                                  value={user.user_roles?.[0]?.role || 'funcionario'}
-                                  onValueChange={(value: AppRole) => 
-                                    updateRoleMutation.mutate({ userId: user.user_id, newRole: value })
-                                  }
-                                >
-                                  <SelectTrigger className="w-[140px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="administrador">Administrador</SelectItem>
-                                    <SelectItem value="fiscal">Fiscal</SelectItem>
-                                    <SelectItem value="funcionario">Funcionário</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                {user.user_roles?.[0]?.role === 'administrador_master' ? (
+                                  <Badge className="bg-amber-500 text-white">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    Admin Master
+                                  </Badge>
+                                ) : (
+                                  <Select
+                                    value={user.user_roles?.[0]?.role || 'funcionario'}
+                                    onValueChange={(value: AppRole) => 
+                                      updateRoleMutation.mutate({ userId: user.user_id, newRole: value })
+                                    }
+                                    disabled={!isAdminMaster}
+                                  >
+                                    <SelectTrigger className="w-[140px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="administrador">Administrador</SelectItem>
+                                      <SelectItem value="fiscal">Fiscal</SelectItem>
+                                      <SelectItem value="funcionario">Funcionário</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
@@ -470,6 +483,7 @@ export default function GestaoUsuarios() {
                                     onCheckedChange={(checked) => 
                                       updateStatusMutation.mutate({ userId: user.user_id, ativo: checked })
                                     }
+                                    disabled={!isAdminMaster || user.user_roles?.[0]?.role === 'administrador_master'}
                                   />
                                   <span className={user.ativo ? 'text-green-600' : 'text-muted-foreground'}>
                                     {user.ativo ? 'Ativo' : 'Inativo'}
@@ -481,24 +495,31 @@ export default function GestaoUsuarios() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    title="Permissões granulares"
-                                    onClick={() => {
-                                      const userRole = user.user_roles?.[0]?.role || 'funcionario';
-                                      setSelectedUserForPermissions({
-                                        id: user.id,
-                                        user_id: user.user_id,
-                                        nome: user.nome,
-                                        email: user.email,
-                                        role: userRole
-                                      });
-                                      setIsPermissionsDialogOpen(true);
-                                    }}
-                                  >
-                                    <Settings2 className="h-4 w-4" />
-                                  </Button>
+                                  {user.user_roles?.[0]?.role !== 'administrador_master' && isAdminMaster && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      title="Permissões granulares"
+                                      onClick={() => {
+                                        const userRole = user.user_roles?.[0]?.role || 'funcionario';
+                                        setSelectedUserForPermissions({
+                                          id: user.id,
+                                          user_id: user.user_id,
+                                          nome: user.nome,
+                                          email: user.email,
+                                          role: userRole
+                                        });
+                                        setIsPermissionsDialogOpen(true);
+                                      }}
+                                    >
+                                      <Settings2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {user.user_roles?.[0]?.role === 'administrador_master' && (
+                                    <span title="Permissões protegidas">
+                                      <Lock className="h-4 w-4 text-muted-foreground" />
+                                    </span>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -512,6 +533,15 @@ export default function GestaoUsuarios() {
 
               {/* Permissions Tab */}
               <TabsContent value="permissoes" className="space-y-4">
+                {!isAdminMaster && (
+                  <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+                    <Lock className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-700 dark:text-amber-300">
+                      Apenas o <strong>Administrador Master</strong> pode alterar permissões de perfis.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 {groupedPermissions.map(({ role, permissions: rolePerms }) => (
                   <Card key={role}>
                     <CardHeader>
@@ -522,7 +552,10 @@ export default function GestaoUsuarios() {
                         Permissões
                       </CardTitle>
                       <CardDescription>
-                        Configure as permissões de acesso para o perfil {ROLE_LABELS[role]}
+                        {role === 'administrador' 
+                          ? 'Administradores têm acesso total ao sistema (exceto gestão de usuários)'
+                          : `Configure as permissões de acesso para o perfil ${ROLE_LABELS[role]}`
+                        }
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -550,7 +583,7 @@ export default function GestaoUsuarios() {
                                       value: checked 
                                     })
                                   }
-                                  disabled={role === 'administrador'} // Admin always has access
+                                  disabled={!isAdminMaster || role === 'administrador'}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
@@ -563,7 +596,7 @@ export default function GestaoUsuarios() {
                                       value: checked 
                                     })
                                   }
-                                  disabled={role === 'administrador'} // Admin always has access
+                                  disabled={!isAdminMaster || role === 'administrador'}
                                 />
                               </TableCell>
                             </TableRow>
