@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users, UserCheck, UserX, Trash2 } from "lucide-react";
+import { Plus, Search, Users, UserCheck, UserX, Trash2, Package } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { AniversariantesCard } from "@/components/responsaveis/AniversariantesCard";
 
 const Responsaveis = () => {
   const navigate = useNavigate();
@@ -28,6 +29,26 @@ const Responsaveis = () => {
         .order("nome");
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch boxes count per responsavel
+  const { data: boxesCounts } = useQuery({
+    queryKey: ["responsaveis-boxes-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("boxes")
+        .select("responsavel_id")
+        .not("responsavel_id", "is", null);
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data?.forEach(box => {
+        if (box.responsavel_id) {
+          counts[box.responsavel_id] = (counts[box.responsavel_id] || 0) + 1;
+        }
+      });
+      return counts;
     },
   });
 
@@ -77,7 +98,7 @@ const Responsaveis = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="p-3 bg-primary/10 rounded-lg">
@@ -111,6 +132,9 @@ const Responsaveis = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Birthday Card in stats row */}
+            <AniversariantesCard />
           </div>
 
           <Card>
@@ -138,6 +162,7 @@ const Responsaveis = () => {
                       <TableHead>CPF</TableHead>
                       <TableHead>Telefone</TableHead>
                       <TableHead>E-mail</TableHead>
+                      <TableHead>Boxes</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Cadastro</TableHead>
                       <TableHead>Ações</TableHead>
@@ -154,6 +179,16 @@ const Responsaveis = () => {
                         <TableCell>{resp.cpf || "—"}</TableCell>
                         <TableCell>{resp.telefone || "—"}</TableCell>
                         <TableCell>{resp.email || "—"}</TableCell>
+                        <TableCell>
+                          {boxesCounts && boxesCounts[resp.id] ? (
+                            <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                              <Package className="h-3 w-3" />
+                              {boxesCounts[resp.id]}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge
                             variant={resp.status === "ATIVO" ? "default" : "secondary"}
