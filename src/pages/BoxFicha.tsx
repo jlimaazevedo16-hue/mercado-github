@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   ArrowLeft, Save, FileText, Wrench, History, Plus, 
-  Calendar, User, MapPin, Building2, Trash2, Edit2, AlertTriangle, MessageCircle 
+  Calendar, User, MapPin, Building2, Trash2, Edit2, AlertTriangle, MessageCircle, Wand2
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -29,6 +29,8 @@ import { DocumentsTable } from "@/components/documents/DocumentsTable";
 import { PhotoUpload } from "@/components/shared/PhotoUpload";
 import { BoxNotificacoesPAD } from "@/components/box/BoxNotificacoesPAD";
 import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
+import { BoxLocationPicker } from "@/components/box/BoxLocationPicker";
+import { useBoxCodeGenerator } from "@/hooks/useBoxCodeGenerator";
 
 const statusOptions = [
   "ASSINADO", "DISPONIVEL", "PROCESSO", "CANCELADO", 
@@ -48,8 +50,10 @@ const BoxFicha = () => {
   const [docDialogOpen, setDocDialogOpen] = useState(false);
   const [maintDialogOpen, setMaintDialogOpen] = useState(false);
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   const isNewBox = id === "novo";
+  const { generateCode } = useBoxCodeGenerator();
 
   const { data: box, isLoading, isError, error } = useQuery({
     queryKey: ["box", id],
@@ -320,6 +324,8 @@ const BoxFicha = () => {
           status: data.status || "DISPONIVEL",
           responsavel_id: data.responsavel_id || null,
           imagem_url: data.imagem_url || null,
+          pos_x: data.pos_x ?? null,
+          pos_y: data.pos_y ?? null,
         })
         .select()
         .single();
@@ -329,6 +335,7 @@ const BoxFicha = () => {
     },
     onSuccess: (newBox) => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-boxes"] });
+      queryClient.invalidateQueries({ queryKey: ["boxes-planta"] });
       toast.success("Box cadastrado com sucesso!");
       navigate(`/boxes/${newBox.id}`);
     },
@@ -336,6 +343,43 @@ const BoxFicha = () => {
       toast.error(error.message || "Erro ao cadastrar box. Verifique se está autenticado.");
     },
   });
+
+  // Auto-generate code when sector changes (for new boxes)
+  const handleSetorChange = async (setorId: string) => {
+    const newSetorId = setorId === "none" ? null : setorId;
+    setFormData({ ...formData, setor_id: newSetorId });
+    
+    // Auto-generate code for new boxes
+    if (isNewBox && newSetorId) {
+      setIsGeneratingCode(true);
+      try {
+        const newCode = await generateCode(newSetorId);
+        setFormData((prev: any) => ({ ...prev, setor_id: newSetorId, codigo: newCode }));
+        toast.success(`Código gerado: ${newCode}`);
+      } catch (error) {
+        console.error("Error generating code:", error);
+      } finally {
+        setIsGeneratingCode(false);
+      }
+    }
+  };
+
+  const handleGenerateCode = async () => {
+    if (!formData.setor_id) {
+      toast.error("Selecione um setor primeiro");
+      return;
+    }
+    setIsGeneratingCode(true);
+    try {
+      const newCode = await generateCode(formData.setor_id);
+      setFormData({ ...formData, codigo: newCode });
+      toast.success(`Código gerado: ${newCode}`);
+    } catch (error) {
+      toast.error("Erro ao gerar código");
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
 
   if (!isNewBox && isLoading) {
     return (
@@ -536,36 +580,11 @@ const BoxFicha = () => {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Código</Label>
-                        {isEditing || isNewBox ? (
-                          <Input
-                            value={formData.codigo || ""}
-                            onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                          />
-                        ) : (
-                          <p className="text-lg font-medium">{box?.codigo}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label>Nome do Box</Label>
-                        {isEditing || isNewBox ? (
-                          <Input
-                            value={formData.boxe || ""}
-                            onChange={(e) => setFormData({ ...formData, boxe: e.target.value })}
-                          />
-                        ) : (
-                          <p className="text-lg font-medium">{box?.boxe}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
                         <Label>Setor</Label>
                         {isEditing || isNewBox ? (
                           <Select
                             value={formData.setor_id || "none"}
-                            onValueChange={(value) => setFormData({ ...formData, setor_id: value === "none" ? null : value })}
+                            onValueChange={handleSetorChange}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione um setor" />
@@ -574,13 +593,53 @@ const BoxFicha = () => {
                               <SelectItem value="none">Nenhum</SelectItem>
                               {setoresList?.map((setor) => (
                                 <SelectItem key={setor.id} value={setor.id}>
-                                  {setor.nome} {setor.mercado ? `(${setor.mercado})` : ""}
+                                  {setor.nome} ({setor.mercado})
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         ) : (
                           <p className="text-muted-foreground">{(box as any)?.setores?.nome || "—"}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Código</Label>
+                        {isEditing || isNewBox ? (
+                          <div className="flex gap-2">
+                            <Input
+                              value={formData.codigo || ""}
+                              onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                              placeholder={isGeneratingCode ? "Gerando..." : "Selecione um setor"}
+                              disabled={isGeneratingCode}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={handleGenerateCode}
+                              disabled={!formData.setor_id || isGeneratingCode}
+                              title="Gerar código automático"
+                            >
+                              <Wand2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-lg font-medium">{box?.codigo}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Nome do Box</Label>
+                        {isEditing || isNewBox ? (
+                          <Input
+                            value={formData.boxe || ""}
+                            onChange={(e) => setFormData({ ...formData, boxe: e.target.value })}
+                            placeholder="Ex: Box 001, Loja A1"
+                          />
+                        ) : (
+                          <p className="text-lg font-medium">{box?.boxe}</p>
                         )}
                       </div>
                       <div>
@@ -608,40 +667,41 @@ const BoxFicha = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <Label>Área (m²)</Label>
-                      {isEditing || isNewBox ? (
-                        <Input
-                          type="number"
-                          value={formData.area_m2 || ""}
-                          onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
-                        />
-                      ) : (
-                        <p className="text-muted-foreground">{box?.area_m2 ? `${box.area_m2} m²` : "—"}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label>Status</Label>
-                      {isEditing || isNewBox ? (
-                        <Select
-                          value={formData.status || "DISPONIVEL"}
-                          onValueChange={(value) => setFormData({ ...formData, status: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOptions.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {status}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge className="mt-1">{box?.status}</Badge>
-                      )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Área (m²)</Label>
+                        {isEditing || isNewBox ? (
+                          <Input
+                            type="number"
+                            value={formData.area_m2 || ""}
+                            onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-muted-foreground">{box?.area_m2 ? `${box.area_m2} m²` : "—"}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Status</Label>
+                        {isEditing || isNewBox ? (
+                          <Select
+                            value={formData.status || "DISPONIVEL"}
+                            onValueChange={(value) => setFormData({ ...formData, status: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {statusOptions.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge className="mt-1">{box?.status}</Badge>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -651,6 +711,7 @@ const BoxFicha = () => {
                           value={formData.atividades || ""}
                           onChange={(e) => setFormData({ ...formData, atividades: e.target.value })}
                           rows={3}
+                          placeholder="Descreva as atividades realizadas no box"
                         />
                       ) : (
                         <p className="text-muted-foreground">{box?.atividades || "—"}</p>
@@ -658,6 +719,16 @@ const BoxFicha = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Location Picker for new boxes */}
+                {(isEditing || isNewBox) && (
+                  <BoxLocationPicker
+                    posX={formData.pos_x ?? null}
+                    posY={formData.pos_y ?? null}
+                    onPositionChange={(x, y) => setFormData({ ...formData, pos_x: x, pos_y: y })}
+                    isEditing={isEditing || isNewBox}
+                  />
+                )}
 
                 <Card>
                   <CardHeader>
