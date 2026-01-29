@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ScrollText, Loader2, Search, Eye, CheckCircle, XCircle, Ban } from "lucide-react";
+import { ScrollText, Loader2, Search, Eye, CheckCircle, XCircle, Ban, Check, CheckCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -18,6 +18,9 @@ interface LogItem {
   destinatario_nome: string | null;
   conteudo: string;
   status: string;
+  status_entrega: string | null;
+  entregue_em: string | null;
+  lido_em: string | null;
   resposta_api: any;
   created_at: string;
   whatsapp_templates: { nome: string } | null;
@@ -40,6 +43,9 @@ export const WhatsAppLogs = () => {
           destinatario_nome,
           conteudo,
           status,
+          status_entrega,
+          entregue_em,
+          lido_em,
           resposta_api,
           created_at,
           whatsapp_templates (nome),
@@ -49,7 +55,11 @@ export const WhatsAppLogs = () => {
         .limit(200);
 
       if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        if (statusFilter === "entregue" || statusFilter === "lido") {
+          query = query.eq("status_entrega", statusFilter);
+        } else {
+          query = query.eq("status", statusFilter);
+        }
       }
 
       const { data, error } = await query;
@@ -82,6 +92,31 @@ export const WhatsAppLogs = () => {
         return <Badge variant="outline" className="text-orange-600 border-orange-600"><Ban className="w-3 h-3 mr-1" /> Bloqueado</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const getDeliveryIcon = (statusEntrega: string | null) => {
+    switch (statusEntrega) {
+      case "lido":
+        return (
+          <span className="flex items-center gap-1 text-blue-500" title="Lido">
+            <CheckCheck className="w-4 h-4" />
+          </span>
+        );
+      case "entregue":
+        return (
+          <span className="flex items-center gap-1 text-gray-500" title="Entregue">
+            <CheckCheck className="w-4 h-4" />
+          </span>
+        );
+      case "enviado":
+        return (
+          <span className="flex items-center gap-1 text-gray-400" title="Enviado">
+            <Check className="w-4 h-4" />
+          </span>
+        );
+      default:
+        return null;
     }
   };
 
@@ -118,9 +153,10 @@ export const WhatsAppLogs = () => {
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="enviado">Enviado</SelectItem>
+              <SelectItem value="entregue">Entregue</SelectItem>
+              <SelectItem value="lido">Lido</SelectItem>
               <SelectItem value="simulado_enviado">Simulado</SelectItem>
               <SelectItem value="erro">Erro</SelectItem>
-              <SelectItem value="erro_simulado">Erro (Simulado)</SelectItem>
               <SelectItem value="bloqueado">Bloqueado</SelectItem>
             </SelectContent>
           </Select>
@@ -146,6 +182,7 @@ export const WhatsAppLogs = () => {
                 <TableHead>Template</TableHead>
                 <TableHead>Enviado por</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Entrega</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -164,6 +201,16 @@ export const WhatsAppLogs = () => {
                   <TableCell>{log.whatsapp_templates?.nome || "—"}</TableCell>
                   <TableCell>{log.profiles?.nome || "Sistema"}</TableCell>
                   <TableCell>{getStatusBadge(log.status)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getDeliveryIcon(log.status_entrega)}
+                      {log.lido_em && (
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(log.lido_em), "HH:mm", { locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
                     <Dialog>
                       <DialogTrigger asChild>
@@ -192,6 +239,39 @@ export const WhatsAppLogs = () => {
                                 <p className="font-medium">
                                   {format(new Date(selectedLog.created_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}
                                 </p>
+                              </div>
+                            </div>
+
+                            {/* Delivery Timeline */}
+                            <div className="bg-muted p-3 rounded-lg space-y-2">
+                              <p className="text-sm font-medium">Status de Entrega</p>
+                              <div className="flex items-center gap-4 text-sm">
+                                <div className="flex items-center gap-1">
+                                  <Check className="w-4 h-4 text-green-500" />
+                                  <span>Enviado</span>
+                                </div>
+                                {(selectedLog.status_entrega === "entregue" || selectedLog.status_entrega === "lido") && (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCheck className="w-4 h-4 text-gray-500" />
+                                    <span>Entregue</span>
+                                    {selectedLog.entregue_em && (
+                                      <span className="text-xs text-muted-foreground">
+                                        ({format(new Date(selectedLog.entregue_em), "HH:mm", { locale: ptBR })})
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {selectedLog.status_entrega === "lido" && (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCheck className="w-4 h-4 text-blue-500" />
+                                    <span>Lido</span>
+                                    {selectedLog.lido_em && (
+                                      <span className="text-xs text-muted-foreground">
+                                        ({format(new Date(selectedLog.lido_em), "HH:mm", { locale: ptBR })})
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
 
