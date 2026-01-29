@@ -89,13 +89,13 @@ export const PendenciasLista = () => {
     data_vencimento: '',
   });
 
-  // Buscar boxes do usuário se for lojista
+  // Buscar boxes do usuário se for lojista (por email OU CPF)
   const { data: userBoxes } = useQuery({
     queryKey: ['user-boxes', user?.id],
     queryFn: async () => {
       if (isAdmin || isAdminMaster) return null;
       
-      // Buscar responsável vinculado ao email do usuário
+      // Buscar perfil do usuário logado (email e possível CPF)
       const { data: profile } = await supabase
         .from('profiles')
         .select('email')
@@ -104,11 +104,35 @@ export const PendenciasLista = () => {
 
       if (!profile?.email) return { responsavelId: null, boxes: [] };
 
-      const { data: responsavel } = await supabase
+      // Primeiro tenta buscar por email
+      let { data: responsavel } = await supabase
         .from('responsaveis')
-        .select('id')
+        .select('id, cpf')
         .eq('email', profile.email)
-        .single();
+        .maybeSingle();
+
+      // Se não encontrou por email, buscar todos os responsáveis para tentar match por CPF
+      // O CPF do lojista pode estar no metadata do auth ou em outro campo
+      if (!responsavel) {
+        // Tentar buscar pelo telefone que pode estar no perfil como identificador alternativo
+        const { data: profileFull } = await supabase
+          .from('profiles')
+          .select('telefone')
+          .eq('user_id', user?.id || '')
+          .single();
+        
+        if (profileFull?.telefone) {
+          const { data: respByPhone } = await supabase
+            .from('responsaveis')
+            .select('id, cpf')
+            .eq('telefone', profileFull.telefone)
+            .maybeSingle();
+          
+          if (respByPhone) {
+            responsavel = respByPhone;
+          }
+        }
+      }
 
       if (!responsavel) return { responsavelId: null, boxes: [] };
 
