@@ -537,24 +537,24 @@ const BoxFicha = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Código</Label>
-                        {isEditing ? (
+                        {isEditing || isNewBox ? (
                           <Input
                             value={formData.codigo || ""}
                             onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                           />
                         ) : (
-                          <p className="text-lg font-medium">{box.codigo}</p>
+                          <p className="text-lg font-medium">{box?.codigo}</p>
                         )}
                       </div>
                       <div>
                         <Label>Nome do Box</Label>
-                        {isEditing ? (
+                        {isEditing || isNewBox ? (
                           <Input
                             value={formData.boxe || ""}
                             onChange={(e) => setFormData({ ...formData, boxe: e.target.value })}
                           />
                         ) : (
-                          <p className="text-lg font-medium">{box.boxe}</p>
+                          <p className="text-lg font-medium">{box?.boxe}</p>
                         )}
                       </div>
                     </div>
@@ -562,16 +562,16 @@ const BoxFicha = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Setor</Label>
-                        {isEditing ? (
+                        {isEditing || isNewBox ? (
                           <Select
-                            value={formData.setor_id || ""}
-                            onValueChange={(value) => setFormData({ ...formData, setor_id: value })}
+                            value={formData.setor_id || "none"}
+                            onValueChange={(value) => setFormData({ ...formData, setor_id: value === "none" ? null : value })}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione um setor" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Nenhum</SelectItem>
+                              <SelectItem value="none">Nenhum</SelectItem>
                               {setoresList?.map((setor) => (
                                 <SelectItem key={setor.id} value={setor.id}>
                                   {setor.nome} {setor.mercado ? `(${setor.mercado})` : ""}
@@ -580,21 +580,21 @@ const BoxFicha = () => {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <p className="text-muted-foreground">{(box as any).setores?.nome || "—"}</p>
+                          <p className="text-muted-foreground">{(box as any)?.setores?.nome || "—"}</p>
                         )}
                       </div>
                       <div>
                         <Label>Segmento</Label>
-                        {isEditing ? (
+                        {isEditing || isNewBox ? (
                           <Select
-                            value={formData.segmento_id || ""}
-                            onValueChange={(value) => setFormData({ ...formData, segmento_id: value })}
+                            value={formData.segmento_id || "none"}
+                            onValueChange={(value) => setFormData({ ...formData, segmento_id: value === "none" ? null : value })}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione um segmento" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Nenhum</SelectItem>
+                              <SelectItem value="none">Nenhum</SelectItem>
                               {segmentosList?.map((segmento) => (
                                 <SelectItem key={segmento.id} value={segmento.id}>
                                   {segmento.nome}
@@ -603,29 +603,29 @@ const BoxFicha = () => {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <p className="text-muted-foreground">{(box as any).segmentos?.nome || "—"}</p>
+                          <p className="text-muted-foreground">{(box as any)?.segmentos?.nome || "—"}</p>
                         )}
                       </div>
                     </div>
 
                     <div>
                       <Label>Área (m²)</Label>
-                      {isEditing ? (
+                      {isEditing || isNewBox ? (
                         <Input
                           type="number"
                           value={formData.area_m2 || ""}
                           onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
                         />
                       ) : (
-                        <p className="text-muted-foreground">{box.area_m2 ? `${box.area_m2} m²` : "—"}</p>
+                        <p className="text-muted-foreground">{box?.area_m2 ? `${box.area_m2} m²` : "—"}</p>
                       )}
                     </div>
 
                     <div>
                       <Label>Status</Label>
-                      {isEditing ? (
+                      {isEditing || isNewBox ? (
                         <Select
-                          value={formData.status}
+                          value={formData.status || "DISPONIVEL"}
                           onValueChange={(value) => setFormData({ ...formData, status: value })}
                         >
                           <SelectTrigger>
@@ -640,20 +640,20 @@ const BoxFicha = () => {
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge className="mt-1">{box.status}</Badge>
+                        <Badge className="mt-1">{box?.status}</Badge>
                       )}
                     </div>
 
                     <div>
                       <Label>Atividades</Label>
-                      {isEditing ? (
+                      {isEditing || isNewBox ? (
                         <Textarea
                           value={formData.atividades || ""}
                           onChange={(e) => setFormData({ ...formData, atividades: e.target.value })}
                           rows={3}
                         />
                       ) : (
-                        <p className="text-muted-foreground">{box.atividades || "—"}</p>
+                        <p className="text-muted-foreground">{box?.atividades || "—"}</p>
                       )}
                     </div>
                   </CardContent>
@@ -666,28 +666,28 @@ const BoxFicha = () => {
                   <CardContent className="space-y-4">
                     <div>
                       <Label>Inquilino</Label>
-                      {isEditing ? (
+                      {isEditing || isNewBox ? (
                         <Input
                           value={formData.inquilino || ""}
                           onChange={(e) => setFormData({ ...formData, inquilino: e.target.value })}
                         />
                       ) : (
-                        <p className="text-lg font-medium">{box.inquilino || "Sem inquilino"}</p>
+                        <p className="text-lg font-medium">{box?.inquilino || "Sem inquilino"}</p>
                       )}
                     </div>
 
                     <div>
                       <Label>Responsável Cadastrado</Label>
-                      {isEditing ? (
+                      {isEditing || isNewBox ? (
                         <Select
-                          value={formData.responsavel_id || ""}
-                          onValueChange={(value) => setFormData({ ...formData, responsavel_id: value || null })}
+                          value={formData.responsavel_id || "none"}
+                          onValueChange={(value) => setFormData({ ...formData, responsavel_id: value === "none" ? null : value })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione um responsável" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {responsaveis?.map((resp) => (
                               <SelectItem key={resp.id} value={resp.id}>
                                 {resp.nome}
@@ -698,8 +698,8 @@ const BoxFicha = () => {
                       ) : (
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span>{(box as any).responsaveis?.nome || "Não vinculado"}</span>
-                          {(box as any).responsaveis && (
+                          <span>{(box as any)?.responsaveis?.nome || "Não vinculado"}</span>
+                          {(box as any)?.responsaveis && (
                             <Button
                               variant="link"
                               size="sm"
@@ -712,23 +712,25 @@ const BoxFicha = () => {
                       )}
                     </div>
 
-                    <div className="pt-4 border-t">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>Criado em: {format(new Date(box.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                    {!isNewBox && box && (
+                      <div className="pt-4 border-t">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>Criado em: {format(new Date(box.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Atualizado em: {format(new Date(box.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>Atualizado em: {format(new Date(box.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
-                      </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
             </TabsContent>
 
             <TabsContent value="notificacoes">
-              <BoxNotificacoesPAD boxId={id || ""} boxCodigo={box.codigo} />
+              <BoxNotificacoesPAD boxId={id || ""} boxCodigo={box?.codigo || ""} />
             </TabsContent>
 
             <TabsContent value="documentos">
