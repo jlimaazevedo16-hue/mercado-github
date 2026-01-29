@@ -8,6 +8,9 @@ import { WhatsAppEnvios } from "@/components/whatsapp/WhatsAppEnvios";
 import { WhatsAppFila } from "@/components/whatsapp/WhatsAppFila";
 import { WhatsAppLogs } from "@/components/whatsapp/WhatsAppLogs";
 import { WhatsAppConfig } from "@/components/whatsapp/WhatsAppConfig";
+import { WhatsAppRecebidas } from "@/components/whatsapp/WhatsAppRecebidas";
+import { WhatsAppAutomacao } from "@/components/whatsapp/WhatsAppAutomacao";
+import { WhatsAppRelatorios } from "@/components/whatsapp/WhatsAppRelatorios";
 import { WhatsAppIntegrationBanner } from "@/components/whatsapp/WhatsAppIntegrationBanner";
 
 const WhatsApp = () => {
@@ -23,20 +26,23 @@ const WhatsApp = () => {
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground">WhatsApp - Comunicação Institucional</h1>
             <p className="text-muted-foreground">
-              Gerencie templates, envios e acompanhe mensagens via WhatsApp
+              Gerencie templates, envios, recebimentos e automações via WhatsApp
             </p>
           </div>
 
           <WhatsAppIntegrationBanner />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+            <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:inline-grid">
               <TabsTrigger value="instancias">Instâncias</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="envios">Envios</TabsTrigger>
               <TabsTrigger value="fila">Fila</TabsTrigger>
+              <TabsTrigger value="recebidas">Recebidas</TabsTrigger>
+              <TabsTrigger value="automacao">Automação</TabsTrigger>
               <TabsTrigger value="logs">Logs</TabsTrigger>
-              <TabsTrigger value="config">Configurações</TabsTrigger>
+              <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+              <TabsTrigger value="config">Config</TabsTrigger>
             </TabsList>
 
             <TabsContent value="instancias">
@@ -55,8 +61,20 @@ const WhatsApp = () => {
               <WhatsAppFila />
             </TabsContent>
 
+            <TabsContent value="recebidas">
+              <WhatsAppRecebidas />
+            </TabsContent>
+
+            <TabsContent value="automacao">
+              <WhatsAppAutomacao />
+            </TabsContent>
+
             <TabsContent value="logs">
               <WhatsAppLogs />
+            </TabsContent>
+
+            <TabsContent value="relatorios">
+              <WhatsAppRelatorios />
             </TabsContent>
 
             <TabsContent value="config">
