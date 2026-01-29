@@ -22,6 +22,7 @@ import Pendencias from "./pages/Pendencias";
 import Configuracoes from "./pages/Configuracoes";
 import Frequencia from "./pages/Frequencia";
 import DashboardFinanceiro from "./pages/DashboardFinanceiro";
+import WhatsApp from "./pages/WhatsApp";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="configuracoes"><Configuracoes /></ProtectedRoute>} />
               <Route path="/frequencia" element={<ProtectedRoute requiredPermission="frequencia"><Frequencia /></ProtectedRoute>} />
               <Route path="/financeiro" element={<ProtectedRoute requiredPermission="configuracoes"><DashboardFinanceiro /></ProtectedRoute>} />
+              <Route path="/whatsapp" element={<ProtectedRoute requiredPermission="whatsapp"><WhatsApp /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

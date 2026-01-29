@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calculator, Calendar, DollarSign } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calculator, Calendar, DollarSign, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -18,6 +18,7 @@ const menuItems = [
   { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado", permission: "almoxarifado" },
   { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
   { id: "financeiro", label: "Financeiro", icon: DollarSign, path: "/financeiro", permission: "configuracoes" },
+  { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, path: "/whatsapp", permission: "whatsapp" },
   { id: "configuracoes", label: "Configurações", icon: Calculator, path: "/configuracoes", permission: "configuracoes" },
   { id: "gestao-usuarios", label: "Gestão de Usuários", icon: Settings, path: "/gestao-usuarios", permission: "gestao_usuarios" },
 ];
