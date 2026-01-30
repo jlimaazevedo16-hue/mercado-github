@@ -17,6 +17,9 @@ import {
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ExportButton } from "@/components/export/ExportButton";
+import { ExportDialog } from "@/components/export/ExportDialog";
+import type { ExportColumn } from "@/lib/export";
 
 interface UnifiedDocument {
   id: string;
@@ -94,6 +97,7 @@ const Documentos = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   // Fetch box documents
   const { data: boxDocuments, isLoading: loadingBoxDocs } = useQuery({
@@ -257,6 +261,16 @@ const Documentos = () => {
 
   const isLoading = loadingBoxDocs || loadingRespDocs;
 
+  // Export configuration
+  const exportColumns: ExportColumn[] = [
+    { key: 'nome', header: 'Documento', width: 25 },
+    { key: 'tipo', header: 'Tipo', width: 12 },
+    { key: 'source', header: 'Vínculo', width: 12, formatter: (v) => v === 'box' ? 'Box' : 'Responsável' },
+    { key: 'entity_name', header: 'Entidade', width: 20 },
+    { key: 'data_emissao', header: 'Emissão', width: 12, formatter: (v) => v ? format(new Date(v as string), 'dd/MM/yyyy') : '-' },
+    { key: 'data_validade', header: 'Validade', width: 12, formatter: (v) => v ? format(new Date(v as string), 'dd/MM/yyyy') : '-' },
+  ];
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar activeItem={activeMenuItem} onItemClick={setActiveMenuItem} />
@@ -267,6 +281,7 @@ const Documentos = () => {
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">Gestão de Documentos</h1>
+            <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="documentos" />
           </div>
 
           {/* Stats Cards */}
@@ -528,6 +543,21 @@ const Documentos = () => {
               )}
             </CardContent>
           </Card>
+
+          <ExportDialog
+            open={showExportDialog}
+            onOpenChange={setShowExportDialog}
+            module="documentos"
+            title="Relatório de Documentos"
+            columns={exportColumns}
+            data={filteredDocuments}
+            filters={{ 
+              tipo: typeFilter !== 'all' ? typeFilter : undefined, 
+              status: statusFilter !== 'all' ? statusFilter : undefined,
+              vinculo: sourceFilter !== 'all' ? sourceFilter : undefined,
+            }}
+            permissionKey="documentos"
+          />
         </main>
       </div>
     </div>

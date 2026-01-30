@@ -13,12 +13,16 @@ import { Plus, Search, Users, UserCheck, UserX, Trash2, Package } from "lucide-r
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AniversariantesCard } from "@/components/responsaveis/AniversariantesCard";
+import { ExportButton } from "@/components/export/ExportButton";
+import { ExportDialog } from "@/components/export/ExportDialog";
+import type { ExportColumn } from "@/lib/export";
 
 const Responsaveis = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeMenuItem, setActiveMenuItem] = useState("responsaveis");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   const { data: responsaveis, isLoading } = useQuery({
     queryKey: ["responsaveis-list"],
@@ -82,6 +86,16 @@ const Responsaveis = () => {
     inativos: responsaveis?.filter((r) => r.status !== "ATIVO").length || 0,
   };
 
+  // Export configuration
+  const exportColumns: ExportColumn[] = [
+    { key: 'nome', header: 'Nome', width: 25 },
+    { key: 'cpf', header: 'CPF', width: 15 },
+    { key: 'telefone', header: 'Telefone', width: 15 },
+    { key: 'email', header: 'E-mail', width: 25 },
+    { key: 'status', header: 'Status', width: 10 },
+    { key: 'created_at', header: 'Data Cadastro', width: 15, formatter: (v) => v ? format(new Date(v as string), 'dd/MM/yyyy') : '-' },
+  ];
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar activeItem={activeMenuItem} onItemClick={setActiveMenuItem} />
@@ -92,10 +106,13 @@ const Responsaveis = () => {
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">Responsáveis</h1>
-            <Button onClick={() => navigate("/responsaveis/novo")}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Responsável
-            </Button>
+            <div className="flex items-center gap-2">
+              <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="responsaveis" />
+              <Button onClick={() => navigate("/responsaveis/novo")}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Responsável
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
@@ -224,6 +241,17 @@ const Responsaveis = () => {
               )}
             </CardContent>
           </Card>
+
+          <ExportDialog
+            open={showExportDialog}
+            onOpenChange={setShowExportDialog}
+            module="responsaveis"
+            title="Relatório de Responsáveis"
+            columns={exportColumns}
+            data={filteredResponsaveis || []}
+            filters={{ busca: searchTerm || undefined }}
+            permissionKey="responsaveis"
+          />
         </main>
       </div>
     </div>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +13,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { ExportButton } from '@/components/export/ExportButton';
+import { ExportDialog } from '@/components/export/ExportDialog';
+import type { ExportColumn } from '@/lib/export';
+import { format } from 'date-fns';
 
 const Notificacoes = () => {
   const [activeItem, setActiveItem] = useState('notificacoes');
@@ -18,6 +24,39 @@ const Notificacoes = () => {
   const [selectedPadId, setSelectedPadId] = useState<string | null>(null);
   const { isAdmin, isAdminMaster } = useUserRole();
   const navigate = useNavigate();
+  const [showExportDialog, setShowExportDialog] = useState(false);
+
+  // Fetch notificacoes for export
+  const { data: notificacoes } = useQuery({
+    queryKey: ['notificacoes-export'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select(`
+          *,
+          boxes (codigo, boxe),
+          responsaveis (nome)
+        `)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const exportColumns: ExportColumn[] = [
+    { key: 'numero_interno', header: 'Número', width: 12 },
+    { key: 'tipo', header: 'Tipo', width: 10 },
+    { key: 'artigo_violado', header: 'Artigo', width: 15 },
+    { key: 'classificacao', header: 'Classificação', width: 12 },
+    { key: 'data_notificacao', header: 'Data', width: 12, formatter: (v) => v ? format(new Date(v as string), 'dd/MM/yyyy') : '-' },
+    { key: 'status', header: 'Status', width: 12 },
+  ];
+
+  const exportData = notificacoes?.map(n => ({
+    ...n,
+    box_codigo: (n.boxes as any)?.codigo || '-',
+    responsavel_nome: (n.responsaveis as any)?.nome || '-',
+  })) || [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -30,14 +69,17 @@ const Notificacoes = () => {
               <h1 className="text-2xl font-bold text-foreground">
                 Notificações e PAD
               </h1>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/pendencias')}
-                className="gap-2"
-              >
-                Ver Central de Pendências
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="notificacoes" />
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/pendencias')}
+                  className="gap-2"
+                >
+                  Ver Central de Pendências
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -90,6 +132,16 @@ const Notificacoes = () => {
                 )}
               </TabsContent>
             </Tabs>
+
+            <ExportDialog
+              open={showExportDialog}
+              onOpenChange={setShowExportDialog}
+              module="notificacoes"
+              title="Relatório de Notificações"
+              columns={exportColumns}
+              data={exportData}
+              permissionKey="notificacoes"
+            />
           </div>
         </main>
       </div>

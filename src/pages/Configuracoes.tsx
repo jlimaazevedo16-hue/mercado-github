@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfiguracoesUFMS } from "@/components/configuracoes/ConfiguracoesUFMS";
 import { ExtracaoMensal } from "@/components/configuracoes/ExtracaoMensal";
 import { SegmentosManager } from "@/components/configuracoes/SegmentosManager";
-import { Settings, FileSpreadsheet, Calculator, Tag } from "lucide-react";
+import { InstituicaoConfig } from "@/components/configuracoes/InstituicaoConfig";
+import { Settings, FileSpreadsheet, Calculator, Tag, Building2 } from "lucide-react";
 
 export default function Configuracoes() {
   const [activeItem, setActiveItem] = useState("configuracoes");
@@ -35,6 +36,10 @@ export default function Configuracoes() {
                   <Calculator className="h-4 w-4" />
                   UFMS e Fatores
                 </TabsTrigger>
+                <TabsTrigger value="instituicao" className="gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Instituição
+                </TabsTrigger>
                 <TabsTrigger value="segmentos" className="gap-2">
                   <Tag className="h-4 w-4" />
                   Segmentos
@@ -47,6 +52,10 @@ export default function Configuracoes() {
 
               <TabsContent value="ufms">
                 <ConfiguracoesUFMS />
+              </TabsContent>
+
+              <TabsContent value="instituicao">
+                <InstituicaoConfig />
               </TabsContent>
 
               <TabsContent value="segmentos">
