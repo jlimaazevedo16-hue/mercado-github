@@ -82,8 +82,9 @@ export function useUserProfile() {
       if (!user?.id) throw new Error("Usuário não autenticado");
 
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `profile-photos/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      // Path must be {user_id}/filename to match RLS policy
+      const filePath = `${user.id}/${fileName}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage

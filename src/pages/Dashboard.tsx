@@ -4,6 +4,8 @@ import { Header } from "@/components/layout/Header";
 import { DashboardStats } from "@/components/dashboard-geral/DashboardStats";
 import { AlertsPanel } from "@/components/dashboard-geral/AlertsPanel";
 import { DashboardCharts } from "@/components/dashboard-geral/DashboardCharts";
+import { AlmoxarifadoCard } from "@/components/dashboard-geral/AlmoxarifadoCard";
+import { ObservatorioCard } from "@/components/dashboard-geral/ObservatorioCard";
 import { LayoutDashboard, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,34 +33,41 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col">
         <Header />
         
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 p-3 md:p-6 overflow-auto">
+          <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <LayoutDashboard className="h-8 w-8 text-primary" />
+                <LayoutDashboard className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 <div>
-                  <h1 className="text-2xl font-bold">Dashboard</h1>
-                  <p className="text-muted-foreground">
+                  <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
+                  <p className="text-sm text-muted-foreground hidden md:block">
                     Visão geral do Mercado Municipal Digital
                   </p>
                 </div>
               </div>
               <Button 
                 variant="outline" 
+                size="sm"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Atualizar
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden md:inline ml-2">Atualizar</span>
               </Button>
             </div>
 
             {/* Stats Cards */}
             <DashboardStats />
 
+            {/* Module Cards: Almoxarifado & Observatorio */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <AlmoxarifadoCard />
+              <ObservatorioCard />
+            </div>
+
             {/* Charts and Alerts Grid */}
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <DashboardCharts />
               </div>
