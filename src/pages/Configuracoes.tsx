@@ -8,8 +8,9 @@ import { SegmentosManager } from "@/components/configuracoes/SegmentosManager";
 import { SetoresManager } from "@/components/configuracoes/SetoresManager";
 import { InstituicaoConfig } from "@/components/configuracoes/InstituicaoConfig";
 import { BackupManager } from "@/components/configuracoes/BackupManager";
+import { EmailConfig } from "@/components/configuracoes/EmailConfig";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin } from "lucide-react";
+import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin, Mail } from "lucide-react";
 
 export default function Configuracoes() {
   const [activeItem, setActiveItem] = useState("configuracoes");
@@ -60,6 +61,12 @@ export default function Configuracoes() {
                   <span className="sm:hidden">Extração</span>
                 </TabsTrigger>
                 {isAdminMaster && (
+                  <TabsTrigger value="email" className="gap-2">
+                    <Mail className="h-4 w-4" />
+                    E-mail
+                  </TabsTrigger>
+                )}
+                {isAdminMaster && (
                   <TabsTrigger value="backup" className="gap-2">
                     <Database className="h-4 w-4" />
                     Backup
@@ -86,6 +93,12 @@ export default function Configuracoes() {
               <TabsContent value="extracao">
                 <ExtracaoMensal />
               </TabsContent>
+
+              {isAdminMaster && (
+                <TabsContent value="email">
+                  <EmailConfig />
+                </TabsContent>
+              )}
 
               {isAdminMaster && (
                 <TabsContent value="backup">
