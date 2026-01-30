@@ -1221,6 +1221,48 @@ export type Database = {
         }
         Relationships: []
       }
+      system_backups: {
+        Row: {
+          arquivo_url: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          status: string | null
+          tabelas_incluidas: string[] | null
+          tamanho_bytes: number | null
+          total_registros: number | null
+        }
+        Insert: {
+          arquivo_url?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          status?: string | null
+          tabelas_incluidas?: string[] | null
+          tamanho_bytes?: number | null
+          total_registros?: number | null
+        }
+        Update: {
+          arquivo_url?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          status?: string | null
+          tabelas_incluidas?: string[] | null
+          tamanho_bytes?: number | null
+          total_registros?: number | null
+        }
+        Relationships: []
+      }
       teste_conexao_supabase: {
         Row: {
           created_at: string
