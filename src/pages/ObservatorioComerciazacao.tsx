@@ -64,9 +64,6 @@ const ObservatorioComerciazacao = () => {
                 <Building2 className="h-8 w-8 text-primary" />
                 <div>
                   <h1 className="text-xl font-bold">Observatório de Comercialização - MOC</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Associação dos Feirantes do Mercado Central | CNPJ: 00.000.000/0001-00 | Localidade: [Cidade/UF]
-                  </p>
                 </div>
               </div>
               <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="observatorio" />
