@@ -5,10 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfiguracoesUFMS } from "@/components/configuracoes/ConfiguracoesUFMS";
 import { ExtracaoMensal } from "@/components/configuracoes/ExtracaoMensal";
 import { SegmentosManager } from "@/components/configuracoes/SegmentosManager";
+import { SetoresManager } from "@/components/configuracoes/SetoresManager";
 import { InstituicaoConfig } from "@/components/configuracoes/InstituicaoConfig";
 import { BackupManager } from "@/components/configuracoes/BackupManager";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database } from "lucide-react";
+import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin } from "lucide-react";
 
 export default function Configuracoes() {
   const [activeItem, setActiveItem] = useState("configuracoes");
@@ -49,6 +50,10 @@ export default function Configuracoes() {
                   <Tag className="h-4 w-4" />
                   Segmentos
                 </TabsTrigger>
+                <TabsTrigger value="setores" className="gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Setores
+                </TabsTrigger>
                 <TabsTrigger value="extracao" className="gap-2">
                   <FileSpreadsheet className="h-4 w-4" />
                   <span className="hidden sm:inline">Extração Mensal</span>
@@ -72,6 +77,10 @@ export default function Configuracoes() {
 
               <TabsContent value="segmentos">
                 <SegmentosManager />
+              </TabsContent>
+
+              <TabsContent value="setores">
+                <SetoresManager />
               </TabsContent>
 
               <TabsContent value="extracao">
