@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import {
   Drawer,
@@ -14,35 +14,51 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Loader2, Save, User } from "lucide-react";
-import { format } from "date-fns";
 
 interface UserProfileDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+// Utility function for CPF formatting
+const formatCPF = (value: string): string => {
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length <= 3) return numbers;
+  if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+  if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+  return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+};
+
 export function UserProfileDrawer({ open, onOpenChange }: UserProfileDrawerProps) {
   const { profile, displayName, initials, updateProfile, isUpdating, uploadPhoto, isUploadingPhoto } = useUserProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
-    nome: profile?.nome || "",
-    sobrenome: profile?.sobrenome || "",
-    telefone: profile?.telefone || "",
-    data_nascimento: profile?.data_nascimento || "",
+    nome: "",
+    sobrenome: "",
+    telefone: "",
+    data_nascimento: "",
+    cpf: "",
   });
 
   // Update form when profile loads
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       setFormData({
         nome: profile.nome || "",
         sobrenome: profile.sobrenome || "",
         telefone: profile.telefone || "",
         data_nascimento: profile.data_nascimento || "",
+        cpf: profile.cpf || "",
       });
     }
-  });
+  }, [profile]);
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numbersOnly = value.replace(/\D/g, '');
+    setFormData(prev => ({ ...prev, cpf: formatCPF(numbersOnly.slice(0, 11)) }));
+  };
 
   const handleSave = () => {
     updateProfile({
@@ -50,6 +66,7 @@ export function UserProfileDrawer({ open, onOpenChange }: UserProfileDrawerProps
       sobrenome: formData.sobrenome || null,
       telefone: formData.telefone || null,
       data_nascimento: formData.data_nascimento || null,
+      cpf: formData.cpf || null,
     });
   };
 
@@ -144,6 +161,19 @@ export function UserProfileDrawer({ open, onOpenChange }: UserProfileDrawerProps
                 onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
                 placeholder="(00) 00000-0000"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF</Label>
+              <Input
+                id="cpf"
+                value={formData.cpf}
+                onChange={handleCPFChange}
+                placeholder="000.000.000-00"
+              />
+              <p className="text-xs text-muted-foreground">
+                Usado como alternativa de login
+              </p>
             </div>
 
             <div className="space-y-2">
