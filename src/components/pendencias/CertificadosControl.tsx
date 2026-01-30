@@ -108,58 +108,58 @@ export const CertificadosControl = () => {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <FileCheck className="h-6 w-6 text-primary" />
+          <CardContent className="p-4 md:pt-6">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileCheck className="h-5 w-5 md:h-6 md:w-6 text-primary" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Total</p>
+                <p className="text-xl md:text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-500" />
+          <CardContent className="p-4 md:pt-6">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="h-5 w-5 md:h-6 md:w-6 text-green-500" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Válidos</p>
-                <p className="text-2xl font-bold text-green-500">{stats.validos}</p>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Válidos</p>
+                <p className="text-xl md:text-2xl font-bold text-green-500">{stats.validos}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-yellow-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-500" />
+          <CardContent className="p-4 md:pt-6">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 md:h-6 md:w-6 text-yellow-500" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Vencendo</p>
-                <p className="text-2xl font-bold text-yellow-500">{stats.vencendo}</p>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Vencendo</p>
+                <p className="text-xl md:text-2xl font-bold text-yellow-500">{stats.vencendo}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <FileWarning className="h-6 w-6 text-destructive" />
+          <CardContent className="p-4 md:pt-6">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                <FileWarning className="h-5 w-5 md:h-6 md:w-6 text-destructive" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Vencidos</p>
-                <p className="text-2xl font-bold text-destructive">{stats.vencidos}</p>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Vencidos</p>
+                <p className="text-xl md:text-2xl font-bold text-destructive">{stats.vencidos}</p>
               </div>
             </div>
           </CardContent>
@@ -168,113 +168,158 @@ export const CertificadosControl = () => {
 
       {/* Filters & Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
             <FileCheck className="h-5 w-5" />
             Controle de Certificados e Licenças
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-6">
+        <CardContent className="px-3 md:px-6">
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-4 md:mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome, box ou inquilino..."
+                placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="valido">Válidos</SelectItem>
-                <SelectItem value="vencendo">Vencendo</SelectItem>
-                <SelectItem value="vencido">Vencidos</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={tipoFilter} onValueChange={setTipoFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {tipos.map((tipo) => (
-                  <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="flex-1 md:w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="valido">Válidos</SelectItem>
+                  <SelectItem value="vencendo">Vencendo</SelectItem>
+                  <SelectItem value="vencido">Vencidos</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger className="flex-1 md:w-32">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {tipos.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Documento</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Box</TableHead>
-                <TableHead>Inquilino</TableHead>
-                <TableHead>Validade</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCertificados?.map((cert) => {
-                const StatusIcon = statusConfig[cert.status].icon;
-                return (
-                  <TableRow key={cert.id}>
-                    <TableCell className="font-medium">{cert.nome}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{cert.tipo}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        {cert.box_codigo}
-                      </div>
-                    </TableCell>
-                    <TableCell>{cert.box_inquilino || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {format(new Date(cert.data_validade), 'dd/MM/yyyy', { locale: ptBR })}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusConfig[cert.status].className}>
-                        <StatusIcon className="h-3 w-3 mr-1" />
-                        {statusConfig[cert.status].label}
-                        {cert.status !== 'valido' && (
-                          <span className="ml-1">
-                            ({cert.diasRestantes < 0 ? `${Math.abs(cert.diasRestantes)}d atrás` : `${cert.diasRestantes}d`})
-                          </span>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/boxes/${cert.box_id}`)}
-                      >
-                        Ver Box
-                      </Button>
+          {/* Mobile: Card List */}
+          <div className="md:hidden space-y-3">
+            {filteredCertificados?.map((cert) => {
+              const StatusIcon = statusConfig[cert.status].icon;
+              return (
+                <Card key={cert.id} className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{cert.nome}</p>
+                      <p className="text-sm text-muted-foreground">{cert.box_codigo} - {cert.box_inquilino || 'Sem inquilino'}</p>
+                    </div>
+                    <Badge className={statusConfig[cert.status].className + " flex-shrink-0 ml-2"}>
+                      <StatusIcon className="h-3 w-3 mr-1" />
+                      {statusConfig[cert.status].label}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      {format(new Date(cert.data_validade), 'dd/MM/yyyy', { locale: ptBR })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/boxes/${cert.box_id}`)}
+                    >
+                      Ver Box
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+            {(!filteredCertificados || filteredCertificados.length === 0) && (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum certificado encontrado
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Documento</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Box</TableHead>
+                  <TableHead>Inquilino</TableHead>
+                  <TableHead>Validade</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCertificados?.map((cert) => {
+                  const StatusIcon = statusConfig[cert.status].icon;
+                  return (
+                    <TableRow key={cert.id}>
+                      <TableCell className="font-medium">{cert.nome}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{cert.tipo}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          {cert.box_codigo}
+                        </div>
+                      </TableCell>
+                      <TableCell>{cert.box_inquilino || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {format(new Date(cert.data_validade), 'dd/MM/yyyy', { locale: ptBR })}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={statusConfig[cert.status].className}>
+                          <StatusIcon className="h-3 w-3 mr-1" />
+                          {statusConfig[cert.status].label}
+                          {cert.status !== 'valido' && (
+                            <span className="ml-1">
+                              ({cert.diasRestantes < 0 ? `${Math.abs(cert.diasRestantes)}d atrás` : `${cert.diasRestantes}d`})
+                            </span>
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/boxes/${cert.box_id}`)}
+                        >
+                          Ver Box
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {(!filteredCertificados || filteredCertificados.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      Nenhum certificado encontrado
                     </TableCell>
                   </TableRow>
-                );
-              })}
-              {(!filteredCertificados || filteredCertificados.length === 0) && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Nenhum certificado encontrado
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

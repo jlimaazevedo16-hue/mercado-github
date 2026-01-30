@@ -18,26 +18,26 @@ const Pendencias = () => {
       <Header />
       <div className="flex flex-1">
         <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-3 md:p-6 overflow-auto">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-foreground">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4 md:mb-6">
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">
                 Central de Pendências
               </h1>
               {role === 'lojista' && (
-                <Badge variant="secondary">Visualização: Meus Boxes</Badge>
+                <Badge variant="secondary" className="w-fit">Visualização: Meus Boxes</Badge>
               )}
               {(isAdmin || isAdminMaster) && (
-                <Badge variant="default">Visualização: Todos os Boxes</Badge>
+                <Badge variant="default" className="w-fit">Visualização: Todos os Boxes</Badge>
               )}
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6">
-                <TabsTrigger value="lista">Pendências</TabsTrigger>
-                <TabsTrigger value="certificados">Certificados</TabsTrigger>
+              <TabsList className="mb-4 md:mb-6 w-full md:w-auto overflow-x-auto">
+                <TabsTrigger value="lista" className="flex-1 md:flex-none">Pendências</TabsTrigger>
+                <TabsTrigger value="certificados" className="flex-1 md:flex-none">Certificados</TabsTrigger>
                 {(isAdmin || isAdminMaster) && (
-                  <TabsTrigger value="alertas">Configurar Alertas</TabsTrigger>
+                  <TabsTrigger value="alertas" className="flex-1 md:flex-none">Alertas</TabsTrigger>
                 )}
               </TabsList>
 

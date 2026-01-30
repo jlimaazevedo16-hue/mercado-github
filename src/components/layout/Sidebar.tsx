@@ -86,14 +86,16 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
         </Button>
 
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground">
-            <div className="flex items-center justify-between px-4 py-4 border-b border-sidebar-border">
+          <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground flex flex-col h-full">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-sidebar-border flex-shrink-0">
               <span className="font-semibold text-lg">Menu</span>
               <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
                 <X size={20} />
               </Button>
             </div>
-            <MenuContent />
+            <div className="flex-1 overflow-y-auto">
+              <MenuContent />
+            </div>
           </SheetContent>
         </Sheet>
       </>
