@@ -98,22 +98,22 @@ export const AlmoxarifadoDashboard = () => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
       {dashboardCards.map((card) => {
         const Icon = card.icon;
         return (
           <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6 md:pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
                 {card.title}
               </CardTitle>
-              <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                <Icon className={`w-4 h-4 ${card.color}`} />
+              <div className={`p-1.5 md:p-2 rounded-lg ${card.bgColor}`}>
+                <Icon className={`w-3 h-3 md:w-4 md:h-4 ${card.color}`} />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${card.color}`}>{card.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className={`text-xl md:text-2xl font-bold ${card.color}`}>{card.value}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-1">{card.description}</p>
             </CardContent>
           </Card>
         );
