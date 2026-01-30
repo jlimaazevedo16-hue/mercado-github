@@ -12,6 +12,7 @@ export interface UserProfile {
   telefone: string | null;
   data_nascimento: string | null;
   foto_url: string | null;
+  cpf: string | null;
   ativo: boolean | null;
   created_at: string;
   updated_at: string;
@@ -23,6 +24,7 @@ export interface UpdateProfileData {
   telefone?: string | null;
   data_nascimento?: string | null;
   foto_url?: string | null;
+  cpf?: string | null;
 }
 
 export function useUserProfile() {
