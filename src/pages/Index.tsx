@@ -8,6 +8,9 @@ import { SearchFilters } from "@/components/dashboard/SearchFilters";
 import { BoxTable, Box } from "@/components/dashboard/BoxTable";
 import { BoxDetails } from "@/components/dashboard/BoxDetails";
 import { BoxesStatCards } from "@/components/boxes/BoxesStatCards";
+import { ExportButton } from "@/components/export/ExportButton";
+import { ExportDialog } from "@/components/export/ExportDialog";
+import type { ExportColumn } from "@/lib/export";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -17,6 +20,7 @@ const Index = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [setorFilter, setSetorFilter] = useState("all");
   const [responsavelFilter, setResponsavelFilter] = useState("all");
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   // Fetch boxes from database
   const { data: boxesData, isLoading } = useQuery({
@@ -135,6 +139,25 @@ const Index = () => {
     setSelectedBox(box);
   };
 
+  // Export configuration
+  const exportColumns: ExportColumn[] = [
+    { key: 'codigo', header: 'Código', width: 12 },
+    { key: 'boxe', header: 'Box', width: 15 },
+    { key: 'setor_nome', header: 'Setor', width: 18 },
+    { key: 'segmento_nome', header: 'Segmento', width: 18 },
+    { key: 'area_m2', header: 'Área (m²)', width: 10 },
+    { key: 'inquilino', header: 'Inquilino', width: 25 },
+    { key: 'responsavel_nome', header: 'Responsável', width: 25 },
+    { key: 'status', header: 'Status', width: 12 },
+  ];
+
+  const exportFilters = {
+    busca: searchTerm || undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    setor: setorFilter !== 'all' ? setorFilter : undefined,
+    responsavel: responsavelFilter !== 'all' ? responsavelFilter : undefined,
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar activeItem={activeMenuItem} onItemClick={setActiveMenuItem} />
@@ -146,6 +169,7 @@ const Index = () => {
           <main className="flex-1 p-6 space-y-6 overflow-auto">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">Gestão de Boxes</h1>
+              <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="boxes" />
             </div>
 
             <BoxesStatCards stats={stats} />
@@ -189,6 +213,17 @@ const Index = () => {
             />
           )}
         </div>
+
+        <ExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          module="boxes"
+          title="Relatório de Boxes"
+          columns={exportColumns}
+          data={filteredBoxes}
+          filters={exportFilters}
+          permissionKey="boxes"
+        />
       </div>
     </div>
   );

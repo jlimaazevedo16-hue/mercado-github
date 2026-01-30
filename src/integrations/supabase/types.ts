@@ -306,6 +306,39 @@ export type Database = {
         }
         Relationships: []
       }
+      export_logs: {
+        Row: {
+          created_at: string
+          filtros_aplicados: Json | null
+          formato: string
+          id: string
+          modulo: string
+          tipo_relatorio: string
+          total_registros: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          filtros_aplicados?: Json | null
+          formato: string
+          id?: string
+          modulo: string
+          tipo_relatorio: string
+          total_registros?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          filtros_aplicados?: Json | null
+          formato?: string
+          id?: string
+          modulo?: string
+          tipo_relatorio?: string
+          total_registros?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       extracoes_mensais: {
         Row: {
           arquivo_url: string | null
