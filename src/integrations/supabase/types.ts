@@ -345,6 +345,48 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          assunto: string
+          ativo: boolean | null
+          categoria: string
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          slug: string
+          updated_at: string
+          variaveis: string[] | null
+        }
+        Insert: {
+          assunto: string
+          ativo?: boolean | null
+          categoria?: string
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          slug: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Update: {
+          assunto?: string
+          ativo?: boolean | null
+          categoria?: string
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          slug?: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Relationships: []
+      }
       export_logs: {
         Row: {
           created_at: string
