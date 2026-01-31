@@ -27,6 +27,7 @@ import { DocumentsTable } from "@/components/documents/DocumentsTable";
 import { PhotoUpload } from "@/components/shared/PhotoUpload";
 import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 import { VerificacaoHistorico } from "@/components/responsaveis/VerificacaoHistorico";
+import { dispatchAtualizacaoCadastro } from "@/lib/emailDispatchService";
 
 const ResponsavelFicha = () => {
   const { id } = useParams();
@@ -128,6 +129,8 @@ const ResponsavelFicha = () => {
   const updateResponsavelMutation = useMutation({
     mutationFn: async (data: any) => {
       const changes: any[] = [];
+      const camposAlterados: string[] = [];
+      
       if (responsavel) {
         Object.keys(data).forEach(key => {
           if (responsavel[key] !== data[key] && key !== 'updated_at') {
@@ -138,6 +141,24 @@ const ResponsavelFicha = () => {
               valor_novo: String(data[key] || ''),
               usuario_id: user?.id || null
             });
+            // Format field name for email
+            const fieldLabels: Record<string, string> = {
+              nome: 'Nome',
+              cpf: 'CPF',
+              rg: 'RG',
+              data_nascimento: 'Data de Nascimento',
+              telefone: 'Telefone',
+              telefone_secundario: 'Telefone Secundário',
+              email: 'E-mail',
+              endereco: 'Endereço',
+              cidade: 'Cidade',
+              estado: 'Estado',
+              cep: 'CEP',
+              status: 'Status',
+            };
+            if (fieldLabels[key]) {
+              camposAlterados.push(fieldLabels[key]);
+            }
           }
         });
       }
@@ -169,6 +190,17 @@ const ResponsavelFicha = () => {
           .from("responsavel_history")
           .insert(changes);
         if (historyError) console.error("Error saving history:", historyError);
+
+        // Send email notification about the update (if responsavel has email)
+        if (data.email && camposAlterados.length > 0) {
+          dispatchAtualizacaoCadastro({
+            destinatario: data.email,
+            destinatario_nome: data.nome,
+            campos_alterados: camposAlterados,
+            link: `${window.location.origin}/responsaveis/${id}`,
+            responsavel_id: id,
+          }, user?.id).catch(err => console.error('Error dispatching email:', err));
+        }
       }
     },
     onSuccess: () => {

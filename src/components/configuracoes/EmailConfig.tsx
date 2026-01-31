@@ -11,7 +11,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { EmailBrandingConfig } from "./EmailBrandingConfig";
 import { EmailSettingsConfig } from "./EmailSettingsConfig";
 import { EmailTemplatesManager } from "./EmailTemplatesManager";
-import { Mail, Send, CheckCircle, XCircle, Loader2, AlertTriangle, Lock, ExternalLink, Palette, Settings2, Key, FileText } from "lucide-react";
+import { EmailLogsViewer } from "./EmailLogsViewer";
+import { Mail, Send, CheckCircle, XCircle, Loader2, AlertTriangle, Lock, ExternalLink, Palette, Settings2, Key, FileText, History } from "lucide-react";
 import { toast } from "sonner";
 
 export function EmailConfig() {
@@ -102,6 +103,10 @@ export function EmailConfig() {
           <TabsTrigger value="api" className="gap-2">
             <Key className="h-4 w-4" />
             API e Testes
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="gap-2">
+            <History className="h-4 w-4" />
+            Logs
           </TabsTrigger>
         </TabsList>
 
@@ -277,6 +282,10 @@ export function EmailConfig() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="logs">
+          <EmailLogsViewer />
         </TabsContent>
       </Tabs>
     </div>

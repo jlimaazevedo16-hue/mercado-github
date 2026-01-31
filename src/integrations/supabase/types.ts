@@ -345,6 +345,78 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          assunto: string
+          box_id: string | null
+          created_at: string
+          created_by: string | null
+          destinatario: string
+          destinatario_nome: string | null
+          erro: string | null
+          id: string
+          referencia_id: string | null
+          referencia_tipo: string | null
+          responsavel_id: string | null
+          resposta_api: Json | null
+          status: string
+          template: string | null
+          tipo: string
+          variaveis: Json | null
+        }
+        Insert: {
+          assunto: string
+          box_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destinatario: string
+          destinatario_nome?: string | null
+          erro?: string | null
+          id?: string
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          responsavel_id?: string | null
+          resposta_api?: Json | null
+          status?: string
+          template?: string | null
+          tipo: string
+          variaveis?: Json | null
+        }
+        Update: {
+          assunto?: string
+          box_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destinatario?: string
+          destinatario_nome?: string | null
+          erro?: string | null
+          id?: string
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          responsavel_id?: string | null
+          resposta_api?: Json | null
+          status?: string
+          template?: string | null
+          tipo?: string
+          variaveis?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           assunto: string
