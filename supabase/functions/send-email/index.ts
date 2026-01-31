@@ -87,31 +87,134 @@ async function getInstitutionalConfig(): Promise<InstitutionalConfig> {
 
 function buildEmailTemplate(templateName: string, variables: Record<string, string>, config: InstitutionalConfig): string {
   const { nome, cnpj, endereco, cidade, email, logoUrl, corPrimaria, corSecundaria } = config;
-  const ano = new Date().getFullYear().toString();
   
   // Logo HTML - only include if URL exists
   const logoHtml = logoUrl 
-    ? `<img src="${logoUrl}" alt="${nome}" style="max-height: 60px; max-width: 200px; margin-bottom: 15px;" />`
+    ? `<img src="${logoUrl}" alt="${nome}" style="max-width:140px; margin-bottom:12px;" />`
     : '';
 
-  // Footer with institutional info
-  const footerInfo = [
-    nome,
-    cnpj ? `CNPJ: ${cnpj}` : '',
-    endereco && cidade ? `${endereco} - ${cidade}` : endereco || cidade,
-    email ? `E-mail: ${email}` : '',
-  ].filter(Boolean).join('<br>');
+  // Build footer address
+  const enderecoCompleto = endereco && cidade 
+    ? `${endereco}<br/>Centro – ${cidade}` 
+    : endereco || cidade || '';
+
+  // Base institutional template
+  const buildInstitutionalTemplate = (titulo: string, conteudo: string, destaque: string, botaoTexto: string, botaoLink: string, headerColor: string = '#0d3b66') => {
+    return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>${nome}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f2f4f8; font-family:Arial, Helvetica, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f2f4f8; padding:20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:${headerColor}; padding:24px; text-align:center;">
+              ${logoHtml}
+              <h1 style="color:#ffffff; margin:0; font-size:20px; font-weight:600;">
+                ${nome}
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px; color:#1f2933;">
+              <h2 style="color:${headerColor}; font-size:18px; margin-top:0;">
+                ${titulo}
+              </h2>
+              <div style="font-size:14px; line-height:1.6;">
+                ${conteudo}
+              </div>
+              ${destaque ? `
+              <div style="background:#eaf2fb; border-left:4px solid ${corSecundaria}; padding:16px; margin:24px 0;">
+                <p style="margin:0; font-size:14px;">
+                  ${destaque}
+                </p>
+              </div>
+              ` : ''}
+              ${botaoTexto && botaoLink ? `
+              <div style="text-align:center; margin:32px 0;">
+                <a href="${botaoLink}" style="background:${corSecundaria}; color:#ffffff; text-decoration:none; padding:14px 28px; border-radius:6px; font-size:14px; font-weight:600; display:inline-block;">
+                  ${botaoTexto}
+                </a>
+              </div>
+              ` : ''}
+              <p style="font-size:13px; color:#4b5563;">
+                Em caso de dúvidas, estamos à disposição.
+              </p>
+              <p style="font-size:13px; margin-bottom:0;">
+                Atenciosamente,<br/>
+                <strong>Diretoria da ${nome}</strong>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0d3b66; color:#ffffff; padding:20px; text-align:center; font-size:12px;">
+              ${cnpj ? `<p style="margin:0;">CNPJ: ${cnpj}</p>` : ''}
+              ${enderecoCompleto ? `<p style="margin:4px 0;">${enderecoCompleto}</p>` : ''}
+              ${email ? `<p style="margin:8px 0 0;">📧 ${email}</p>` : ''}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  };
 
   const templates: Record<string, string> = {
-    welcome: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Bem-vindo</title></head><body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;"><table role="presentation" style="width: 100%; border-collapse: collapse;"><tr><td align="center" style="padding: 40px 0;"><table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"><tr><td style="padding: 40px 40px 20px; text-align: center; background-color: ${corPrimaria}; border-radius: 8px 8px 0 0;">${logoHtml}<h1 style="margin: 0; color: #ffffff; font-size: 24px;">${nome}</h1></td></tr><tr><td style="padding: 40px;"><h2 style="margin: 0 0 20px; color: ${corPrimaria};">Bem-vindo(a), {{nome}}!</h2><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;">Sua conta foi criada com sucesso no sistema ${nome}.</p><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;">Agora você pode acessar todas as funcionalidades do sistema para gerenciar boxes, responsáveis e muito mais.</p><div style="text-align: center; margin: 30px 0;"><a href="{{link}}" style="display: inline-block; padding: 14px 28px; background-color: ${corPrimaria}; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">Acessar Sistema</a></div></td></tr><tr><td style="padding: 20px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;"><p style="margin: 0 0 10px; color: #374151; font-size: 12px; line-height: 1.5;">${footerInfo}</p><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${ano} ${nome}. Todos os direitos reservados.</p></td></tr></table></td></tr></table></body></html>`,
+    welcome: buildInstitutionalTemplate(
+      'Bem-vindo(a), {{nome}}!',
+      `<p>Sua conta foi criada com sucesso no sistema ${nome}.</p>
+       <p>Agora você pode acessar todas as funcionalidades do sistema para gerenciar boxes, responsáveis e muito mais.</p>`,
+      '',
+      'Acessar Sistema',
+      '{{link}}'
+    ),
 
-    notification: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Notificação</title></head><body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;"><table role="presentation" style="width: 100%; border-collapse: collapse;"><tr><td align="center" style="padding: 40px 0;"><table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"><tr><td style="padding: 40px 40px 20px; text-align: center; background-color: #dc2626; border-radius: 8px 8px 0 0;">${logoHtml}<h1 style="margin: 0; color: #ffffff; font-size: 24px;">⚠️ Notificação Importante</h1></td></tr><tr><td style="padding: 40px;"><h2 style="margin: 0 0 20px; color: #dc2626;">{{titulo}}</h2><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;"><strong>Box:</strong> {{box}}</p><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;"><strong>Responsável:</strong> {{responsavel}}</p><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;">{{mensagem}}</p><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;"><strong>Prazo:</strong> {{prazo}}</p><div style="text-align: center; margin: 30px 0;"><a href="{{link}}" style="display: inline-block; padding: 14px 28px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver Detalhes</a></div></td></tr><tr><td style="padding: 20px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;"><p style="margin: 0 0 10px; color: #374151; font-size: 12px; line-height: 1.5;">${footerInfo}</p><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${ano} ${nome}. Todos os direitos reservados.</p></td></tr></table></td></tr></table></body></html>`,
+    notification: buildInstitutionalTemplate(
+      '{{titulo}}',
+      `<p><strong>Box:</strong> {{box}}</p>
+       <p><strong>Responsável:</strong> {{responsavel}}</p>
+       <div>{{mensagem}}</div>
+       <p><strong>Prazo:</strong> {{prazo}}</p>`,
+      '',
+      'Ver Detalhes',
+      '{{link}}',
+      '#dc2626'
+    ),
 
-    expiration_alert: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Alerta de Vencimento</title></head><body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;"><table role="presentation" style="width: 100%; border-collapse: collapse;"><tr><td align="center" style="padding: 40px 0;"><table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"><tr><td style="padding: 40px 40px 20px; text-align: center; background-color: ${corSecundaria}; border-radius: 8px 8px 0 0;">${logoHtml}<h1 style="margin: 0; color: #ffffff; font-size: 24px;">🔔 Alerta de Vencimento</h1></td></tr><tr><td style="padding: 40px;"><h2 style="margin: 0 0 20px; color: ${corSecundaria};">{{tipo}} próximo do vencimento</h2><p style="margin: 0 0 15px; color: #374151; line-height: 1.6;"><strong>Documento:</strong> {{documento}}</p><p style="margin: 0 0 15px; color: #374151; line-height: 1.6;"><strong>Box/Responsável:</strong> {{referencia}}</p><p style="margin: 0 0 15px; color: #374151; line-height: 1.6;"><strong>Data de Vencimento:</strong> {{data_vencimento}}</p><p style="margin: 0 0 15px; color: #374151; line-height: 1.6;"><strong>Dias Restantes:</strong> <span style="color: ${corSecundaria}; font-weight: bold;">{{dias_restantes}} dias</span></p><div style="text-align: center; margin: 30px 0;"><a href="{{link}}" style="display: inline-block; padding: 14px 28px; background-color: ${corSecundaria}; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">Regularizar Agora</a></div></td></tr><tr><td style="padding: 20px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;"><p style="margin: 0 0 10px; color: #374151; font-size: 12px; line-height: 1.5;">${footerInfo}</p><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${ano} ${nome}. Todos os direitos reservados.</p></td></tr></table></td></tr></table></body></html>`,
+    expiration_alert: buildInstitutionalTemplate(
+      '🔔 {{tipo}} próximo do vencimento',
+      `<p><strong>Documento:</strong> {{documento}}</p>
+       <p><strong>Box/Responsável:</strong> {{referencia}}</p>
+       <p><strong>Data de Vencimento:</strong> {{data_vencimento}}</p>`,
+      '<strong>Dias Restantes:</strong> {{dias_restantes}}',
+      'Regularizar Agora',
+      '{{link}}'
+    ),
 
-    generic: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{assunto}}</title></head><body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;"><table role="presentation" style="width: 100%; border-collapse: collapse;"><tr><td align="center" style="padding: 40px 0;"><table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"><tr><td style="padding: 40px 40px 20px; text-align: center; background-color: ${corPrimaria}; border-radius: 8px 8px 0 0;">${logoHtml}<h1 style="margin: 0; color: #ffffff; font-size: 24px;">${nome}</h1></td></tr><tr><td style="padding: 40px;"><h2 style="margin: 0 0 20px; color: ${corPrimaria};">{{titulo}}</h2><div style="color: #374151; line-height: 1.6;">{{conteudo}}</div></td></tr><tr><td style="padding: 20px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;"><p style="margin: 0 0 10px; color: #374151; font-size: 12px; line-height: 1.5;">${footerInfo}</p><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${ano} ${nome}. Todos os direitos reservados.</p></td></tr></table></td></tr></table></body></html>`,
+    generic: buildInstitutionalTemplate(
+      '{{titulo}}',
+      '{{conteudo}}',
+      '{{destaque}}',
+      '{{botao_texto}}',
+      '{{botao_link}}'
+    ),
 
-    password_reset: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Redefinir Senha</title></head><body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;"><table role="presentation" style="width: 100%; border-collapse: collapse;"><tr><td align="center" style="padding: 40px 0;"><table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"><tr><td style="padding: 40px 40px 20px; text-align: center; background-color: ${corPrimaria}; border-radius: 8px 8px 0 0;">${logoHtml}<h1 style="margin: 0; color: #ffffff; font-size: 24px;">🔐 Redefinir Senha</h1></td></tr><tr><td style="padding: 40px;"><h2 style="margin: 0 0 20px; color: ${corPrimaria};">Olá, {{nome}}!</h2><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;">Recebemos uma solicitação para redefinir a senha da sua conta no ${nome}.</p><p style="margin: 0 0 20px; color: #374151; line-height: 1.6;">Clique no botão abaixo para criar uma nova senha:</p><div style="text-align: center; margin: 30px 0;"><a href="{{link}}" style="display: inline-block; padding: 14px 28px; background-color: ${corPrimaria}; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">Redefinir Senha</a></div><p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">Este link expira em 1 hora.</p><p style="margin: 0; color: #6b7280; font-size: 14px;">Se você não solicitou essa redefinição, ignore este e-mail.</p></td></tr><tr><td style="padding: 20px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;"><p style="margin: 0 0 10px; color: #374151; font-size: 12px; line-height: 1.5;">${footerInfo}</p><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${ano} ${nome}. Todos os direitos reservados.</p></td></tr></table></td></tr></table></body></html>`,
+    password_reset: buildInstitutionalTemplate(
+      '🔐 Redefinir Senha',
+      `<p>Olá <strong>{{nome}}</strong>,</p>
+       <p>Recebemos uma solicitação para redefinir a senha da sua conta.</p>
+       <p>Clique no botão abaixo para criar uma nova senha:</p>`,
+      'Este link expira em 1 hora. Se você não solicitou essa redefinição, ignore este e-mail.',
+      'Redefinir Senha',
+      '{{link}}'
+    ),
   };
 
   let template = templates[templateName] || templates.generic;
@@ -120,6 +223,9 @@ function buildEmailTemplate(templateName: string, variables: Record<string, stri
   Object.entries(variables).forEach(([key, value]) => {
     template = template.replace(new RegExp(`{{${key}}}`, 'g'), value || '');
   });
+  
+  // Clean up unused placeholders
+  template = template.replace(/\{\{[^}]+\}\}/g, '');
   
   return template;
 }
