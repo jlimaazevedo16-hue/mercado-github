@@ -94,11 +94,12 @@ const Login = () => {
           return;
         }
 
-        // Look up email by CPF
+        // Look up email by CPF - try both formatted and raw versions
+        const formattedCPF = formatCPF(cpfNumbers);
         const { data: profile, error: lookupError } = await supabase
           .from('profiles')
           .select('email')
-          .eq('cpf', identifier)
+          .or(`cpf.eq.${formattedCPF},cpf.eq.${cpfNumbers}`)
           .maybeSingle();
 
         if (lookupError) {
