@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ArrowLeft, Save, FileText, History, Plus, 
-  Calendar, User, Phone, Mail, MapPin, Edit2, Package, MessageCircle
+  Calendar, User, Phone, Mail, MapPin, Edit2, Package, MessageCircle, ShieldCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -26,6 +26,7 @@ import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialo
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
 import { PhotoUpload } from "@/components/shared/PhotoUpload";
 import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
+import { VerificacaoHistorico } from "@/components/responsaveis/VerificacaoHistorico";
 
 const ResponsavelFicha = () => {
   const { id } = useParams();
@@ -336,6 +337,10 @@ const ResponsavelFicha = () => {
                   <TabsTrigger value="historico" className="flex items-center gap-2">
                     <History className="h-4 w-4" />
                     Histórico ({history?.length || 0})
+                  </TabsTrigger>
+                  <TabsTrigger value="verificacao" className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4" />
+                    Verificação
                   </TabsTrigger>
                 </>
               )}
@@ -703,6 +708,21 @@ const ResponsavelFicha = () => {
                       )}
                     </CardContent>
                   </Card>
+                </TabsContent>
+
+                <TabsContent value="verificacao">
+                  <VerificacaoHistorico
+                    responsavelId={id!}
+                    responsavelData={{
+                      nome: responsavel?.nome || '',
+                      email: responsavel?.email,
+                      telefone: responsavel?.telefone,
+                      data_nascimento: responsavel?.data_nascimento,
+                      verificacao_status: (responsavel as any)?.verificacao_status,
+                      verificacao_data: (responsavel as any)?.verificacao_data,
+                    }}
+                    boxes={boxesVinculados?.map(b => ({ codigo: b.codigo, setor: b.setor }))}
+                  />
                 </TabsContent>
               </>
             )}

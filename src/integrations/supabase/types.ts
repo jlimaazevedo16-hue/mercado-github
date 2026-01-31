@@ -1007,6 +1007,8 @@ export type Database = {
           telefone: string | null
           telefone_secundario: string | null
           updated_at: string
+          verificacao_data: string | null
+          verificacao_status: string | null
         }
         Insert: {
           cep?: string | null
@@ -1026,6 +1028,8 @@ export type Database = {
           telefone?: string | null
           telefone_secundario?: string | null
           updated_at?: string
+          verificacao_data?: string | null
+          verificacao_status?: string | null
         }
         Update: {
           cep?: string | null
@@ -1045,6 +1049,8 @@ export type Database = {
           telefone?: string | null
           telefone_secundario?: string | null
           updated_at?: string
+          verificacao_data?: string | null
+          verificacao_status?: string | null
         }
         Relationships: []
       }
@@ -1451,6 +1457,97 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      verificacao_historico: {
+        Row: {
+          acao: string
+          created_at: string
+          created_by: string | null
+          detalhes: Json | null
+          id: string
+          ip_address: string | null
+          responsavel_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          created_by?: string | null
+          detalhes?: Json | null
+          id?: string
+          ip_address?: string | null
+          responsavel_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          created_by?: string | null
+          detalhes?: Json | null
+          id?: string
+          ip_address?: string | null
+          responsavel_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verificacao_historico_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verificacao_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          ip_address: string | null
+          responsavel_id: string
+          tipo: string
+          token: string
+          usado: boolean | null
+          usado_em: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          responsavel_id: string
+          tipo: string
+          token: string
+          usado?: boolean | null
+          usado_em?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          responsavel_id?: string
+          tipo?: string
+          token?: string
+          usado?: boolean | null
+          usado_em?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verificacao_tokens_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       whatsapp_automacoes: {
         Row: {
