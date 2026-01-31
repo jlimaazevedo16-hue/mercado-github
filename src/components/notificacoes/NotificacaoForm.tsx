@@ -14,7 +14,9 @@ import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { dispatchNotificacaoPAD } from '@/lib/emailDispatchService';
 import { Badge } from '@/components/ui/badge';
 
 interface NotificacaoFormProps {
@@ -56,6 +58,7 @@ interface UploadedFile {
 export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
   const queryClient = useQueryClient();
   const { logAction } = useAuditLog();
+  const { user } = useAuth();
   
   const [formData, setFormData] = useState({
     tipo: 'interna' as 'interna' | 'externa',
@@ -95,7 +98,7 @@ export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('responsaveis')
-        .select('id, nome')
+        .select('id, nome, email')
         .eq('status', 'ATIVO')
         .order('nome');
       if (error) throw error;
@@ -174,6 +177,32 @@ export const NotificacaoForm = ({ onSuccess }: NotificacaoFormProps) => {
         recordId: data.id,
         newValues: data,
       });
+
+      // Send email notification to responsible party
+      const selectedResp = responsaveis?.find(r => r.id === data.responsavel_id);
+      const selectedBoxData = boxes?.find(b => b.id === data.box_id);
+      
+      if (selectedResp?.email) {
+        const artigoLabel = artigos.find(a => a.value === formData.artigo_violado)?.label 
+          || formData.artigo_outro 
+          || formData.artigo_violado;
+
+        dispatchNotificacaoPAD({
+          destinatario: selectedResp.email,
+          destinatario_nome: selectedResp.nome,
+          numero_notificacao: data.numero_interno || 'S/N',
+          tipo_notificacao: formData.tipo === 'interna' ? 'Interna' : 'Externa',
+          descricao: formData.descricao_infracao,
+          artigo_violado: artigoLabel,
+          prazo_defesa: format(formData.prazo_defesa, 'dd/MM/yyyy'),
+          box_codigo: selectedBoxData?.codigo || selectedBoxData?.boxe,
+          link: `${window.location.origin}/notificacoes`,
+          responsavel_id: data.responsavel_id,
+          box_id: data.box_id,
+          notificacao_id: data.id,
+        }, user?.id).catch(err => console.error('Error dispatching PAD email:', err));
+      }
+
       toast.success('Notificação criada com sucesso!');
       onSuccess();
     },

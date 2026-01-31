@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useState } from "react";
-import { useEmail } from "@/hooks/useEmail";
+import { useEmailDispatch } from "@/hooks/useEmailDispatch";
 
 interface VerificacaoHistoricoProps {
   responsavelId: string;
@@ -63,7 +63,7 @@ export function VerificacaoHistorico({
   boxes = []
 }: VerificacaoHistoricoProps) {
   const [isSending, setIsSending] = useState(false);
-  const { sendEmail } = useEmail();
+  const { dispatchVerificacaoDados } = useEmailDispatch();
 
   const { data: historico, isLoading, refetch } = useQuery({
     queryKey: ["verificacao-historico", responsavelId],
@@ -102,42 +102,23 @@ export function VerificacaoHistorico({
       // Get box info
       const boxInfo = boxes.length > 0 ? boxes[0] : null;
 
-      // Send verification email
-      const result = await sendEmail({
-        to: responsavelData.email,
-        subject: `Verificação de Dados Cadastrais - ${boxInfo?.codigo || 'Mercado Municipal'}`,
-        template: 'generic',
-        variables: {
-          titulo: 'Verificação de Dados Cadastrais',
-          assunto: 'Verificação de Dados Cadastrais',
-          conteudo: `
-            <p>Olá <strong>${responsavelData.nome}</strong>,</p>
-            <p>Solicitamos a verificação dos seus dados cadastrais em nosso sistema.</p>
-            
-            <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-              <h3 style="margin: 0 0 15px 0; color: #333;">Seus Dados Cadastrais</h3>
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;"><strong>Nome:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;">${responsavelData.nome}</td></tr>
-                ${boxInfo ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;"><strong>Box:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;">${boxInfo.codigo}</td></tr>` : ''}
-                ${boxInfo?.setor ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;"><strong>Setor:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;">${boxInfo.setor}</td></tr>` : ''}
-                ${responsavelData.telefone ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;"><strong>Telefone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;">${responsavelData.telefone}</td></tr>` : ''}
-                <tr><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;"><strong>E-mail:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e9ecef;">${responsavelData.email}</td></tr>
-                ${responsavelData.data_nascimento ? `<tr><td style="padding: 8px 0;"><strong>Data de Nascimento:</strong></td><td style="padding: 8px 0;">${format(new Date(responsavelData.data_nascimento), 'dd/MM/yyyy')}</td></tr>` : ''}
-              </table>
-            </div>
-            
-            <p>Por favor, verifique se as informações acima estão corretas:</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${link_confirmar}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-right: 10px;">✓ Confirmar Dados</a>
-              <a href="${link_corrigir}" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">✎ Solicitar Correção</a>
-            </div>
-            
-            <p style="color: #666; font-size: 14px;">
-              <em>Este link expira em 7 dias. Caso não reconheça esta solicitação, ignore este e-mail.</em>
-            </p>
-          `,
+      // Send verification email using dispatch service (with logging)
+      const result = await dispatchVerificacaoDados({
+        destinatario: responsavelData.email,
+        destinatario_nome: responsavelData.nome,
+        dados_cadastrais: {
+          box: boxInfo?.codigo,
+          setor: boxInfo?.setor || undefined,
+          telefone: responsavelData.telefone || undefined,
+          email: responsavelData.email,
+          data_nascimento: responsavelData.data_nascimento 
+            ? format(new Date(responsavelData.data_nascimento), 'dd/MM/yyyy') 
+            : undefined,
         },
+        link_confirmar,
+        link_corrigir,
+        responsavel_id: responsavelId,
+        box_id: boxInfo ? undefined : undefined, // We don't have box_id here
       });
 
       if (result.success) {
