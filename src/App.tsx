@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import VerificacaoCadastral from "./pages/VerificacaoCadastral";
 import Almoxarifado from "./pages/Almoxarifado";
 import PlantaBaixa from "./pages/PlantaBaixa";
 import BoxFicha from "./pages/BoxFicha";
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/frequencia" element={<ProtectedRoute requiredPermission="frequencia"><Frequencia /></ProtectedRoute>} />
                 <Route path="/financeiro" element={<ProtectedRoute requiredPermission="configuracoes"><DashboardFinanceiro /></ProtectedRoute>} />
                 <Route path="/whatsapp" element={<ProtectedRoute requiredPermission="whatsapp"><WhatsApp /></ProtectedRoute>} />
+                <Route path="/verificacao/:token" element={<VerificacaoCadastral />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
