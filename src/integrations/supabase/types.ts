@@ -637,6 +637,44 @@ export type Database = {
         }
         Relationships: []
       }
+      logs_receitas_operacionais: {
+        Row: {
+          acao: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          data_hora: string
+          id: string
+          receita_operacional_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          data_hora?: string
+          id?: string
+          receita_operacional_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          data_hora?: string
+          id?: string
+          receita_operacional_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_receitas_operacionais_receita_operacional_id_fkey"
+            columns: ["receita_operacional_id"]
+            isOneToOne: false
+            referencedRelation: "receitas_operacionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moc_produtos: {
         Row: {
           created_at: string
@@ -1060,6 +1098,65 @@ export type Database = {
         }
         Relationships: []
       }
+      receitas_operacionais: {
+        Row: {
+          bloqueado: boolean
+          comprovante_url: string | null
+          created_at: string
+          data_fechamento: string | null
+          data_referencia: string
+          descricao: string | null
+          forma_pagamento: string
+          id: string
+          observacoes: string | null
+          origem_caixa: string | null
+          responsavel_lancamento: string | null
+          tipo_receita_id: string
+          updated_at: string
+          valor_bruto: number
+        }
+        Insert: {
+          bloqueado?: boolean
+          comprovante_url?: string | null
+          created_at?: string
+          data_fechamento?: string | null
+          data_referencia?: string
+          descricao?: string | null
+          forma_pagamento: string
+          id?: string
+          observacoes?: string | null
+          origem_caixa?: string | null
+          responsavel_lancamento?: string | null
+          tipo_receita_id: string
+          updated_at?: string
+          valor_bruto: number
+        }
+        Update: {
+          bloqueado?: boolean
+          comprovante_url?: string | null
+          created_at?: string
+          data_fechamento?: string | null
+          data_referencia?: string
+          descricao?: string | null
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          origem_caixa?: string | null
+          responsavel_lancamento?: string | null
+          tipo_receita_id?: string
+          updated_at?: string
+          valor_bruto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receitas_operacionais_tipo_receita_id_fkey"
+            columns: ["tipo_receita_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_receita"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       responsaveis: {
         Row: {
           cep: string | null
@@ -1440,6 +1537,30 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      tipos_receita: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          id?: string
+          nome?: string
         }
         Relationships: []
       }

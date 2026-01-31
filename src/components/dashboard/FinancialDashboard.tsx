@@ -1,15 +1,19 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { DollarSign, TrendingUp, AlertTriangle, Building2 } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, Building2, Receipt, Wallet } from "lucide-react";
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useUFMS } from "@/contexts/UFMSContext";
+import { ReceitasOperacionaisTab } from "@/components/financeiro/ReceitasOperacionaisTab";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export const FinancialDashboard = () => {
+  const [activeTab, setActiveTab] = useState("fixas");
   // Use global UFMS context for real-time updates
   const { ufmsValor, fatorCondominio, fatorAluguel, taxaCondominio, isLoading: ufmsLoading } = useUFMS();
 
@@ -133,167 +137,186 @@ export const FinancialDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Mensal Projetada</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              R$ {totalReceitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground">Condomínio + Aluguel</p>
-          </CardContent>
-        </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-2 w-full max-w-md">
+          <TabsTrigger value="fixas" className="gap-2">
+            <Wallet className="h-4 w-4" />
+            Receitas Fixas
+          </TabsTrigger>
+          <TabsTrigger value="operacionais" className="gap-2">
+            <Receipt className="h-4 w-4" />
+            Receitas Operacionais
+          </TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Condomínio</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              R$ {totalCondominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground">{boxesAtivos.length} boxes × R$ {taxaCondominio.toFixed(2)}</p>
-          </CardContent>
-        </Card>
+        <TabsContent value="fixas" className="mt-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Receita Mensal Projetada</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  R$ {totalReceitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground">Condomínio + Aluguel</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Aluguel</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              R$ {totalAluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground">{totalAreaM2.toFixed(2)} m² total</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Condomínio</CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  R$ {totalCondominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground">{boxesAtivos.length} boxes × R$ {taxaCondominio.toFixed(2)}</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Multas Pendentes</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              R$ {totalMultasPendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground">{percentualInadimplencia}% dos boxes</p>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Aluguel</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  R$ {totalAluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground">{totalAreaM2.toFixed(2)} m² total</p>
+              </CardContent>
+            </Card>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue by Sector */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Receita por Setor</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dadosSetor.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={dadosSetor}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {dadosSetor.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
-                Nenhum dado disponível
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Multas Pendentes</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive">
+                  R$ {totalMultasPendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground">{percentualInadimplencia}% dos boxes</p>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Delinquency by Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Inadimplência por Status do PAD</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dadosInadimplencia.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={dadosInadimplencia} layout="vertical">
+          {/* Charts Row 1 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Revenue by Sector */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Receita por Setor</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {dadosSetor.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={dadosSetor}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {dadosSetor.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                    Nenhum dado disponível
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Delinquency by Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Inadimplência por Status do PAD</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {dadosInadimplencia.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={dadosInadimplencia} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" tickFormatter={(value) => `R$ ${value}`} />
+                      <YAxis dataKey="name" type="category" width={100} />
+                      <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                      <Bar dataKey="value" fill="#ef4444" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                    Nenhuma multa pendente
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Monthly Evolution Chart */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Evolução Mensal de Receita</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={dadosMensaisExibir}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tickFormatter={(value) => `R$ ${value}`} />
-                  <YAxis dataKey="name" type="category" width={100} />
+                  <XAxis dataKey="mes" />
+                  <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
                   <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                  <Bar dataKey="value" fill="#ef4444" />
+                  <Legend />
+                  <Bar dataKey="Condomínio" fill="#0088FE" stackId="a" />
+                  <Bar dataKey="Aluguel" fill="#00C49F" stackId="a" />
+                  <Bar dataKey="Multas" fill="#FF8042" />
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
-                Nenhuma multa pendente
+            </CardContent>
+          </Card>
+
+          {/* Configuration Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Parâmetros de Cálculo Atuais</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Valor UFMS</p>
+                  <p className="text-xl font-bold">R$ {ufmsValor.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Fator Condomínio</p>
+                  <p className="text-xl font-bold">{fatorCondominio}x</p>
+                  <p className="text-xs text-muted-foreground">= R$ {taxaCondominio.toFixed(2)}/box</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Fator Aluguel</p>
+                  <p className="text-xl font-bold">{fatorAluguel}x</p>
+                  <p className="text-xs text-muted-foreground">= R$ {(ufmsValor * fatorAluguel).toFixed(2)}/m²</p>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Monthly Evolution Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Evolução Mensal de Receita</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dadosMensaisExibir}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mes" />
-              <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-              <Legend />
-              <Bar dataKey="Condomínio" fill="#0088FE" stackId="a" />
-              <Bar dataKey="Aluguel" fill="#00C49F" stackId="a" />
-              <Bar dataKey="Multas" fill="#FF8042" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Configuration Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Parâmetros de Cálculo Atuais</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Valor UFMS</p>
-              <p className="text-xl font-bold">R$ {ufmsValor.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}</p>
-            </div>
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Fator Condomínio</p>
-              <p className="text-xl font-bold">{fatorCondominio}x</p>
-              <p className="text-xs text-muted-foreground">= R$ {taxaCondominio.toFixed(2)}/box</p>
-            </div>
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Fator Aluguel</p>
-              <p className="text-xl font-bold">{fatorAluguel}x</p>
-              <p className="text-xs text-muted-foreground">= R$ {(ufmsValor * fatorAluguel).toFixed(2)}/m²</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="operacionais" className="mt-6">
+          <ReceitasOperacionaisTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
