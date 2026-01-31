@@ -10,8 +10,10 @@ import { useEmail } from "@/hooks/useEmail";
 import { useUserRole } from "@/hooks/useUserRole";
 import { EmailBrandingConfig } from "./EmailBrandingConfig";
 import { EmailSettingsConfig } from "./EmailSettingsConfig";
-import { Mail, Send, CheckCircle, XCircle, Loader2, AlertTriangle, Lock, ExternalLink, Palette, Settings2, Key } from "lucide-react";
+import { EmailTemplatesManager } from "./EmailTemplatesManager";
+import { Mail, Send, CheckCircle, XCircle, Loader2, AlertTriangle, Lock, ExternalLink, Palette, Settings2, Key, FileText } from "lucide-react";
 import { toast } from "sonner";
+
 export function EmailConfig() {
   const { isAdminMaster, loading: roleLoading } = useUserRole();
   const { sendGenericEmail } = useEmail();
@@ -84,10 +86,14 @@ export function EmailConfig() {
       )}
 
       <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="settings" className="gap-2">
             <Settings2 className="h-4 w-4" />
             Configurações
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Templates
           </TabsTrigger>
           <TabsTrigger value="branding" className="gap-2">
             <Palette className="h-4 w-4" />
@@ -101,6 +107,10 @@ export function EmailConfig() {
 
         <TabsContent value="settings">
           <EmailSettingsConfig />
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <EmailTemplatesManager />
         </TabsContent>
 
         <TabsContent value="branding">
