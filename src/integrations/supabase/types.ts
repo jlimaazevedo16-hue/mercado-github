@@ -306,6 +306,45 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes_email: {
+        Row: {
+          created_at: string
+          email_remetente: string | null
+          envio_ativo: boolean | null
+          id: string
+          nome_remetente: string | null
+          template_alerta: string | null
+          template_financeiro: string | null
+          template_institucional: string | null
+          template_verificacao: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email_remetente?: string | null
+          envio_ativo?: boolean | null
+          id?: string
+          nome_remetente?: string | null
+          template_alerta?: string | null
+          template_financeiro?: string | null
+          template_institucional?: string | null
+          template_verificacao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email_remetente?: string | null
+          envio_ativo?: boolean | null
+          id?: string
+          nome_remetente?: string | null
+          template_alerta?: string | null
+          template_financeiro?: string | null
+          template_institucional?: string | null
+          template_verificacao?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       export_logs: {
         Row: {
           created_at: string

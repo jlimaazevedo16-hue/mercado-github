@@ -9,9 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmail } from "@/hooks/useEmail";
 import { useUserRole } from "@/hooks/useUserRole";
 import { EmailBrandingConfig } from "./EmailBrandingConfig";
-import { Mail, Send, CheckCircle, XCircle, Loader2, AlertTriangle, Lock, ExternalLink, Palette, Settings2 } from "lucide-react";
+import { EmailSettingsConfig } from "./EmailSettingsConfig";
+import { Mail, Send, CheckCircle, XCircle, Loader2, AlertTriangle, Lock, ExternalLink, Palette, Settings2, Key } from "lucide-react";
 import { toast } from "sonner";
-
 export function EmailConfig() {
   const { isAdminMaster, loading: roleLoading } = useUserRole();
   const { sendGenericEmail } = useEmail();
@@ -83,23 +83,31 @@ export function EmailConfig() {
         </Alert>
       )}
 
-      <Tabs defaultValue="branding" className="space-y-4">
+      <Tabs defaultValue="settings" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="settings" className="gap-2">
+            <Settings2 className="h-4 w-4" />
+            Configurações
+          </TabsTrigger>
           <TabsTrigger value="branding" className="gap-2">
             <Palette className="h-4 w-4" />
-            Branding Institucional
+            Branding
           </TabsTrigger>
-          <TabsTrigger value="config" className="gap-2">
-            <Settings2 className="h-4 w-4" />
-            Configuração do Serviço
+          <TabsTrigger value="api" className="gap-2">
+            <Key className="h-4 w-4" />
+            API e Testes
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="settings">
+          <EmailSettingsConfig />
+        </TabsContent>
 
         <TabsContent value="branding">
           <EmailBrandingConfig />
         </TabsContent>
 
-        <TabsContent value="config">
+        <TabsContent value="api">
           <div className="space-y-6">
             {/* Status do Serviço */}
             <Card>
