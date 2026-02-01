@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, FileText, Search, AlertTriangle, Scale, Trash2 } from 'lucide-react';
+import { Eye, FileText, Search, AlertTriangle, Scale, Trash2, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -15,6 +15,8 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useLojistaResponsavel } from '@/hooks/useLojistaResponsavel';
 
 interface NotificacoesListaProps {
   onViewPad: (padId: string) => void;
@@ -59,6 +61,9 @@ const statusColors: Record<string, string> = {
 export const NotificacoesLista = ({ onViewPad }: NotificacoesListaProps) => {
   const queryClient = useQueryClient();
   const { logAction } = useAuditLog();
+  const { role, isAdmin, isAdminMaster } = useUserRole();
+  const { responsavelId, isLojista } = useLojistaResponsavel();
+  
   const [search, setSearch] = useState('');
   const [filterClassificacao, setFilterClassificacao] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -71,10 +76,24 @@ export const NotificacoesLista = ({ onViewPad }: NotificacoesListaProps) => {
     fundamentacao: '',
   });
 
-  const { data: notificacoes, isLoading } = useQuery({
-    queryKey: ['notificacoes'],
+  // Buscar boxes vinculados ao lojista
+  const { data: userBoxIds } = useQuery({
+    queryKey: ['lojista-box-ids', responsavelId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!responsavelId) return [];
+      const { data } = await supabase
+        .from('boxes')
+        .select('id')
+        .eq('responsavel_id', responsavelId);
+      return data?.map(b => b.id) || [];
+    },
+    enabled: isLojista && !!responsavelId,
+  });
+
+  const { data: notificacoes, isLoading } = useQuery({
+    queryKey: ['notificacoes', isLojista, userBoxIds],
+    queryFn: async () => {
+      let query = supabase
         .from('notificacoes')
         .select(`
           *,
@@ -84,6 +103,12 @@ export const NotificacoesLista = ({ onViewPad }: NotificacoesListaProps) => {
         `)
         .order('created_at', { ascending: false });
 
+      // Filtrar para lojista: apenas notificações dos seus boxes
+      if (isLojista && userBoxIds && userBoxIds.length > 0) {
+        query = query.in('box_id', userBoxIds);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Notificacao[];
     },
@@ -203,8 +228,23 @@ export const NotificacoesLista = ({ onViewPad }: NotificacoesListaProps) => {
     setShowPadDialog(true);
   };
 
+  // Apenas admins podem abrir PAD e excluir notificações
+  const canManage = isAdmin || isAdminMaster;
+
   return (
     <>
+      {/* Indicador de visualização do lojista */}
+      {isLojista && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+            <Building2 className="h-5 w-5" />
+            <span className="font-medium">
+              Visualizando notificações dos seus boxes
+            </span>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -312,7 +352,7 @@ export const NotificacoesLista = ({ onViewPad }: NotificacoesListaProps) => {
                             <Eye className="h-4 w-4 mr-1" />
                             Ver PAD
                           </Button>
-                        ) : (
+                        ) : canManage ? (
                           <Button
                             variant="default"
                             size="sm"
@@ -321,14 +361,16 @@ export const NotificacoesLista = ({ onViewPad }: NotificacoesListaProps) => {
                             <Scale className="h-4 w-4 mr-1" />
                             Abrir PAD
                           </Button>
+                        ) : null}
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteNotificacaoMutation.mutate(notificacao.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteNotificacaoMutation.mutate(notificacao.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
