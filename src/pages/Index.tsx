@@ -13,6 +13,7 @@ import { ExportDialog } from "@/components/export/ExportDialog";
 import type { ExportColumn } from "@/lib/export";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLojistaResponsavel } from "@/hooks/useLojistaResponsavel";
+import { LojistaPendenciasPanel } from "@/components/lojista/LojistaPendenciasPanel";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -191,6 +192,9 @@ const Index = () => {
             </div>
 
             {!isLojista && <BoxesStatCards stats={stats} />}
+            
+            {/* Painel de avisos para lojista */}
+            {isLojista && <LojistaPendenciasPanel />}
 
             <SearchFilters 
               searchTerm={searchTerm}

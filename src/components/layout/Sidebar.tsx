@@ -3,8 +3,10 @@ import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, Ba
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useLojistaPendencias } from "@/hooks/useLojistaPendencias";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -33,7 +35,32 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { hasPermission } = useUserRole();
+  const { hasPermission, role } = useUserRole();
+  const isLojista = role === 'lojista';
+  
+  // Get pendencias for lojista badges
+  const { 
+    total: totalPendencias, 
+    totalNotificacoes, 
+    totalDocumentosVencidos, 
+    totalDocumentosVencendo 
+  } = useLojistaPendencias();
+
+  // Calculate badge counts per menu item for lojista
+  const getBadgeCount = (menuId: string): number => {
+    if (!isLojista) return 0;
+    
+    switch (menuId) {
+      case 'boxes':
+        return totalPendencias;
+      case 'pendencias':
+        return totalNotificacoes + totalDocumentosVencidos + totalDocumentosVencendo;
+      case 'documentos':
+        return totalDocumentosVencidos + totalDocumentosVencendo;
+      default:
+        return 0;
+    }
+  };
 
   // Filter menu items based on user permissions
   const visibleMenuItems = menuItems.filter(item => hasPermission(item.permission, 'view'));
@@ -52,12 +79,14 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
         {visibleMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeItem === item.id;
+          const badgeCount = getBadgeCount(item.id);
+          
           return (
             <li key={item.id}>
               <button
                 onClick={() => handleItemClick(item)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left",
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left relative",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "hover:bg-sidebar-accent/50",
@@ -65,8 +94,29 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
                 )}
                 title={!showLabels ? item.label : undefined}
               >
-                <Icon size={20} className="flex-shrink-0" />
-                {showLabels && <span className="font-medium">{item.label}</span>}
+                <div className="relative">
+                  <Icon size={20} className="flex-shrink-0" />
+                  {/* Badge indicator for collapsed state */}
+                  {!showLabels && badgeCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
+                      {badgeCount > 9 ? '9+' : badgeCount}
+                    </span>
+                  )}
+                </div>
+                {showLabels && (
+                  <>
+                    <span className="font-medium flex-1">{item.label}</span>
+                    {/* Badge for expanded state */}
+                    {badgeCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="ml-auto h-5 min-w-5 px-1.5 text-xs animate-pulse"
+                      >
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </Badge>
+                    )}
+                  </>
+                )}
               </button>
             </li>
           );
