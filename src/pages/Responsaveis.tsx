@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,8 @@ import { AniversariantesCard } from "@/components/responsaveis/AniversariantesCa
 import { ExportButton } from "@/components/export/ExportButton";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import type { ExportColumn } from "@/lib/export";
+import { useLojistaResponsavel } from "@/hooks/useLojistaResponsavel";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Responsaveis = () => {
   const navigate = useNavigate();
@@ -23,6 +25,10 @@ const Responsaveis = () => {
   const [activeMenuItem, setActiveMenuItem] = useState("responsaveis");
   const [searchTerm, setSearchTerm] = useState("");
   const [showExportDialog, setShowExportDialog] = useState(false);
+  
+  const { responsavelId, isLojista } = useLojistaResponsavel();
+  const { hasPermission } = useUserRole();
+  const canEdit = hasPermission('responsaveis', 'edit');
 
   const { data: responsaveis, isLoading } = useQuery({
     queryKey: ["responsaveis-list"],
@@ -35,6 +41,15 @@ const Responsaveis = () => {
       return data;
     },
   });
+  
+  // Filter for lojista - only show their own data
+  const filteredByRole = useMemo(() => {
+    if (!responsaveis) return [];
+    if (isLojista && responsavelId) {
+      return responsaveis.filter(r => r.id === responsavelId);
+    }
+    return responsaveis;
+  }, [responsaveis, isLojista, responsavelId]);
 
   // Fetch boxes count per responsavel
   const { data: boxesCounts } = useQuery({
@@ -73,7 +88,7 @@ const Responsaveis = () => {
     },
   });
 
-  const filteredResponsaveis = responsaveis?.filter(
+  const filteredResponsaveis = filteredByRole?.filter(
     (r) =>
       r.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.cpf?.includes(searchTerm) ||
@@ -81,9 +96,9 @@ const Responsaveis = () => {
   );
 
   const stats = {
-    total: responsaveis?.length || 0,
-    ativos: responsaveis?.filter((r) => r.status === "ATIVO").length || 0,
-    inativos: responsaveis?.filter((r) => r.status !== "ATIVO").length || 0,
+    total: filteredByRole?.length || 0,
+    ativos: filteredByRole?.filter((r) => r.status === "ATIVO").length || 0,
+    inativos: filteredByRole?.filter((r) => r.status !== "ATIVO").length || 0,
   };
 
   // Export configuration
@@ -105,54 +120,60 @@ const Responsaveis = () => {
 
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Responsáveis</h1>
+            <h1 className="text-2xl font-bold">{isLojista ? 'Meus Dados' : 'Responsáveis'}</h1>
             <div className="flex items-center gap-2">
-              <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="responsaveis" />
-              <Button onClick={() => navigate("/responsaveis/novo")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Responsável
-              </Button>
+              {!isLojista && (
+                <>
+                  <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="responsaveis" />
+                  <Button onClick={() => navigate("/responsaveis/novo")}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Responsável
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <UserCheck className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Ativos</p>
-                  <p className="text-2xl font-bold">{stats.ativos}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 bg-red-100 rounded-lg">
-                  <UserX className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Inativos</p>
-                  <p className="text-2xl font-bold">{stats.inativos}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Birthday Card in stats row */}
-            <AniversariantesCard />
-          </div>
+          {!isLojista && (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="p-3 bg-green-100 rounded-lg">
+                    <UserCheck className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ativos</p>
+                    <p className="text-2xl font-bold">{stats.ativos}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="p-3 bg-red-100 rounded-lg">
+                    <UserX className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Inativos</p>
+                    <p className="text-2xl font-bold">{stats.inativos}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Birthday Card in stats row */}
+              <AniversariantesCard />
+            </div>
+          )}
 
           <Card>
             <CardHeader>
@@ -182,7 +203,7 @@ const Responsaveis = () => {
                       <TableHead>Boxes</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Cadastro</TableHead>
-                      <TableHead>Ações</TableHead>
+                      {!isLojista && canEdit && <TableHead>Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -216,20 +237,22 @@ const Responsaveis = () => {
                         <TableCell>
                           {format(new Date(resp.created_at), "dd/MM/yyyy")}
                         </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("Deseja remover este responsável?")) {
-                                deleteMutation.mutate(resp.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
+                        {!isLojista && canEdit && (
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm("Deseja remover este responsável?")) {
+                                  deleteMutation.mutate(resp.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

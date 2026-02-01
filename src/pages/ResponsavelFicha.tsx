@@ -28,6 +28,7 @@ import { PhotoUpload } from "@/components/shared/PhotoUpload";
 import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 import { VerificacaoHistorico } from "@/components/responsaveis/VerificacaoHistorico";
 import { dispatchAtualizacaoCadastro } from "@/lib/emailDispatchService";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const ResponsavelFicha = () => {
   const { id } = useParams();
@@ -41,6 +42,8 @@ const ResponsavelFicha = () => {
   const [docDialogOpen, setDocDialogOpen] = useState(false);
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const isNew = id === "novo";
+  const { role } = useUserRole();
+  const isLojista = role === 'lojista';
 
   const { data: responsavel, isLoading } = useQuery({
     queryKey: ["responsavel", id],
@@ -101,7 +104,8 @@ const ResponsavelFicha = () => {
   useEffect(() => {
     if (responsavel) {
       setFormData(responsavel);
-    } else if (isNew) {
+    } else if (isNew && !isLojista) {
+      // Only non-lojistas can create new records
       setIsEditing(true);
       setFormData({ status: "ATIVO" });
     }
@@ -304,8 +308,8 @@ const ResponsavelFicha = () => {
               )}
             </div>
             <div className="ml-auto flex gap-2">
-              {/* WhatsApp Button */}
-              {!isNew && responsavel?.telefone && (
+              {/* WhatsApp Button - hidden for lojista */}
+              {!isLojista && !isNew && responsavel?.telefone && (
                 <Button 
                   variant="outline" 
                   onClick={() => setWhatsappDialogOpen(true)}
@@ -316,23 +320,26 @@ const ResponsavelFicha = () => {
                 </Button>
               )}
               
-              {isEditing ? (
-                <>
-                  {!isNew && (
-                    <Button variant="outline" onClick={() => { setIsEditing(false); setFormData(responsavel); }}>
-                      Cancelar
+              {/* Lojista can only view, not edit */}
+              {!isLojista && (
+                isEditing ? (
+                  <>
+                    {!isNew && (
+                      <Button variant="outline" onClick={() => { setIsEditing(false); setFormData(responsavel); }}>
+                        Cancelar
+                      </Button>
+                    )}
+                    <Button onClick={handleSave}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {isNew ? "Cadastrar" : "Salvar"}
                     </Button>
-                  )}
-                  <Button onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {isNew ? "Cadastrar" : "Salvar"}
+                  </>
+                ) : (
+                  <Button onClick={() => setIsEditing(true)}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Editar
                   </Button>
-                </>
-              ) : (
-                <Button onClick={() => setIsEditing(true)}>
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
+                )
               )}
             </div>
           </div>
