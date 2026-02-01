@@ -11,6 +11,8 @@ import { BoxesStatCards } from "@/components/boxes/BoxesStatCards";
 import { ExportButton } from "@/components/export/ExportButton";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import type { ExportColumn } from "@/lib/export";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useLojistaResponsavel } from "@/hooks/useLojistaResponsavel";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,6 +23,10 @@ const Index = () => {
   const [setorFilter, setSetorFilter] = useState("all");
   const [responsavelFilter, setResponsavelFilter] = useState("all");
   const [showExportDialog, setShowExportDialog] = useState(false);
+  
+  const { hasPermission, role } = useUserRole();
+  const { responsavelId, isLojista, loading: lojistaLoading } = useLojistaResponsavel();
+  const canEdit = hasPermission("boxes", "edit");
 
   // Fetch boxes from database
   const { data: boxesData, isLoading } = useQuery({
@@ -74,9 +80,21 @@ const Index = () => {
     }
   });
 
-  // Calculate stats
+  // Filter boxes for lojista (only their linked boxes)
+  const baseBoxes = useMemo(() => {
+    if (!boxesData) return [];
+    
+    // Se for lojista, filtrar apenas os boxes vinculados ao responsável
+    if (isLojista && responsavelId) {
+      return boxesData.filter(box => box.responsavel_id === responsavelId);
+    }
+    
+    return boxesData;
+  }, [boxesData, isLojista, responsavelId]);
+
+  // Calculate stats (based on filtered boxes for lojista)
   const stats = useMemo(() => {
-    if (!boxesData) return {
+    if (!baseBoxes) return {
       total: 0,
       assinados: 0,
       disponiveis: 0,
@@ -86,33 +104,33 @@ const Index = () => {
       areaTotal: 0
     };
 
-    const uniqueResponsaveis = new Set(boxesData.filter(b => b.responsavel_id).map(b => b.responsavel_id));
+    const uniqueResponsaveis = new Set(baseBoxes.filter(b => b.responsavel_id).map(b => b.responsavel_id));
 
     return {
-      total: boxesData.length,
-      assinados: boxesData.filter(b => b.status === "ASSINADO").length,
-      disponiveis: boxesData.filter(b => b.status === "DISPONIVEL").length,
-      emProcesso: boxesData.filter(b => b.status === "PROCESSO").length,
-      interditados: boxesData.filter(b => b.status === "INTERDITADO").length,
+      total: baseBoxes.length,
+      assinados: baseBoxes.filter(b => b.status === "ASSINADO").length,
+      disponiveis: baseBoxes.filter(b => b.status === "DISPONIVEL").length,
+      emProcesso: baseBoxes.filter(b => b.status === "PROCESSO").length,
+      interditados: baseBoxes.filter(b => b.status === "INTERDITADO").length,
       responsaveisAtivos: uniqueResponsaveis.size,
-      areaTotal: boxesData.reduce((sum, b) => sum + (b.area_m2 || 0), 0)
+      areaTotal: baseBoxes.reduce((sum, b) => sum + (b.area_m2 || 0), 0)
     };
-  }, [boxesData]);
+  }, [baseBoxes]);
 
-  // Get unique setores for filter
+  // Get unique setores for filter (from base boxes for lojista)
   const setores = useMemo(() => {
     const uniqueSetores = new Set<string>();
-    boxesData?.forEach(box => {
+    baseBoxes?.forEach(box => {
       if (box.setor_nome) uniqueSetores.add(box.setor_nome);
     });
     return Array.from(uniqueSetores).sort();
-  }, [boxesData]);
+  }, [baseBoxes]);
 
-  // Filter boxes
+  // Filter boxes (apply additional filters on top of lojista filter)
   const filteredBoxes = useMemo(() => {
-    if (!boxesData) return [];
+    if (!baseBoxes) return [];
     
-    return boxesData.filter(box => {
+    return baseBoxes.filter(box => {
       // Search filter
       const matchesSearch = !searchTerm || 
         box.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,12 +146,12 @@ const Index = () => {
       // Setor filter
       const matchesSetor = setorFilter === "all" || box.setor_nome === setorFilter;
 
-      // Responsavel filter
-      const matchesResponsavel = responsavelFilter === "all" || box.responsavel_id === responsavelFilter;
+      // Responsavel filter (only for non-lojistas, since lojista is already filtered)
+      const matchesResponsavel = isLojista || responsavelFilter === "all" || box.responsavel_id === responsavelFilter;
 
       return matchesSearch && matchesStatus && matchesSetor && matchesResponsavel;
     });
-  }, [boxesData, searchTerm, statusFilter, setorFilter, responsavelFilter]);
+  }, [baseBoxes, searchTerm, statusFilter, setorFilter, responsavelFilter, isLojista]);
 
   const handleSelectBox = (box: Box) => {
     setSelectedBox(box);
@@ -182,10 +200,10 @@ const Index = () => {
               setorFilter={setorFilter}
               onSetorChange={setSetorFilter}
               setores={setores}
-              responsavelFilter={responsavelFilter}
-              onResponsavelChange={setResponsavelFilter}
-              responsaveis={responsaveisData}
-              onNewBox={() => navigate("/boxes/novo")}
+              responsavelFilter={isLojista ? undefined : responsavelFilter}
+              onResponsavelChange={isLojista ? undefined : setResponsavelFilter}
+              responsaveis={isLojista ? undefined : responsaveisData}
+              onNewBox={canEdit ? () => navigate("/boxes/novo") : undefined}
             />
             <BoxTable 
               boxes={filteredBoxes} 
