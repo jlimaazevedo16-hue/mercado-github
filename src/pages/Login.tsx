@@ -94,19 +94,35 @@ const Login = () => {
           return;
         }
 
-        // Look up email by CPF - try both formatted and raw versions
+        // Look up email by CPF - try multiple formats
         const formattedCPF = formatCPF(cpfNumbers);
+        console.log('Buscando CPF:', { raw: cpfNumbers, formatted: formattedCPF });
+        
         const { data: profile, error: lookupError } = await supabase
           .from('profiles')
-          .select('email')
-          .or(`cpf.eq.${formattedCPF},cpf.eq.${cpfNumbers}`)
+          .select('email, cpf')
+          .not('cpf', 'is', null)
           .maybeSingle();
-
+        
+        // Find profile where CPF matches (normalized comparison)
+        let matchedProfile = null;
+        if (!lookupError) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('email, cpf')
+            .not('cpf', 'is', null);
+          
+          matchedProfile = profiles?.find(p => {
+            const storedCPFNumbers = p.cpf?.replace(/\D/g, '');
+            return storedCPFNumbers === cpfNumbers;
+          });
+        }
         if (lookupError) {
+          console.error('Erro ao buscar CPF:', lookupError);
           throw new Error('Erro ao buscar usuário');
         }
 
-        if (!profile) {
+        if (!matchedProfile) {
           toast({
             title: 'CPF não encontrado',
             description: 'Não existe usuário cadastrado com este CPF.',
@@ -116,7 +132,7 @@ const Login = () => {
           return;
         }
 
-        emailToUse = profile.email;
+        emailToUse = matchedProfile.email;
       } else if (!isEmail(identifier)) {
         toast({
           title: 'Formato inválido',
