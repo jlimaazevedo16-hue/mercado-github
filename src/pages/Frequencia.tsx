@@ -6,15 +6,18 @@ import { Header } from "@/components/layout/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReunioesList } from "@/components/frequencia/ReunioesList";
 import { FrequenciaRelatorios } from "@/components/frequencia/FrequenciaRelatorios";
+import { LojistaFrequencia } from "@/components/frequencia/LojistaFrequencia";
 import { Calendar, BarChart3 } from "lucide-react";
 import { ExportButton } from "@/components/export/ExportButton";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import type { ExportColumn } from "@/lib/export";
 import { format } from "date-fns";
+import { useLojistaResponsavel } from "@/hooks/useLojistaResponsavel";
 
 const Frequencia = () => {
   const [activeMenuItem, setActiveMenuItem] = useState("frequencia");
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const { responsavelId, isLojista } = useLojistaResponsavel();
 
   // Fetch reunioes for export
   const { data: reunioes } = useQuery({
@@ -47,34 +50,44 @@ const Frequencia = () => {
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold">Controle de Frequência</h1>
+              <h1 className="text-2xl font-bold">
+                {isLojista ? 'Minha Frequência' : 'Controle de Frequência'}
+              </h1>
               <p className="text-muted-foreground">
-                Gerencie reuniões, assembleias e controle a presença dos responsáveis
+                {isLojista 
+                  ? 'Acompanhe sua presença em reuniões e assembleias'
+                  : 'Gerencie reuniões, assembleias e controle a presença dos responsáveis'}
               </p>
             </div>
-            <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="frequencia" />
+            {!isLojista && (
+              <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="frequencia" />
+            )}
           </div>
 
-          <Tabs defaultValue="reunioes" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
-              <TabsTrigger value="reunioes" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Reuniões
-              </TabsTrigger>
-              <TabsTrigger value="relatorios" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Relatórios
-              </TabsTrigger>
-            </TabsList>
+          {isLojista && responsavelId ? (
+            <LojistaFrequencia responsavelId={responsavelId} />
+          ) : (
+            <Tabs defaultValue="reunioes" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
+                <TabsTrigger value="reunioes" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Reuniões
+                </TabsTrigger>
+                <TabsTrigger value="relatorios" className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Relatórios
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="reunioes">
-              <ReunioesList />
-            </TabsContent>
+              <TabsContent value="reunioes">
+                <ReunioesList />
+              </TabsContent>
 
-            <TabsContent value="relatorios">
-              <FrequenciaRelatorios />
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="relatorios">
+                <FrequenciaRelatorios />
+              </TabsContent>
+            </Tabs>
+          )}
 
           <ExportDialog
             open={showExportDialog}

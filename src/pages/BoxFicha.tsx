@@ -31,6 +31,7 @@ import { BoxNotificacoesPAD } from "@/components/box/BoxNotificacoesPAD";
 import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 import { BoxLocationPicker } from "@/components/box/BoxLocationPicker";
 import { useBoxCodeGenerator } from "@/hooks/useBoxCodeGenerator";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const statusOptions = [
   "ASSINADO", "DISPONIVEL", "PROCESSO", "CANCELADO", 
@@ -54,6 +55,8 @@ const BoxFicha = () => {
 
   const isNewBox = id === "novo";
   const { generateCode } = useBoxCodeGenerator();
+  const { role } = useUserRole();
+  const isLojista = role === 'lojista';
 
   const { data: box, isLoading, isError, error } = useQuery({
     queryKey: ["box", id],
@@ -438,8 +441,8 @@ const BoxFicha = () => {
               )}
             </div>
             <div className="ml-auto flex gap-2">
-              {/* WhatsApp Button */}
-              {!isNewBox && (box as any)?.responsaveis?.telefone && (
+              {/* WhatsApp Button - hidden for lojista */}
+              {!isLojista && !isNewBox && (box as any)?.responsaveis?.telefone && (
                 <Button 
                   variant="outline" 
                   onClick={() => setWhatsappDialogOpen(true)}

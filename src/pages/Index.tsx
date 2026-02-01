@@ -186,11 +186,11 @@ const Index = () => {
         <div className="flex flex-1">
           <main className="flex-1 p-6 space-y-6 overflow-auto">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">Gestão de Boxes</h1>
-              <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="boxes" />
+              <h1 className="text-2xl font-bold">{isLojista ? 'Meus Boxes' : 'Gestão de Boxes'}</h1>
+              {!isLojista && <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="boxes" />}
             </div>
 
-            <BoxesStatCards stats={stats} />
+            {!isLojista && <BoxesStatCards stats={stats} />}
 
             <SearchFilters 
               searchTerm={searchTerm}
