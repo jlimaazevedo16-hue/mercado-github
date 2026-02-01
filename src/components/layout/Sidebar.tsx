@@ -2,7 +2,8 @@ import { useState } from "react";
 import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calculator, Calendar, DollarSign, MessageCircle, Menu, X, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +13,6 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/", permission: "dashboard" },
   { id: "boxes", label: "Boxes", icon: Package, path: "/boxes", permission: "boxes" },
   { id: "planta-baixa", label: "Planta Baixa", icon: Map, path: "/planta-baixa", permission: "planta_baixa" },
   { id: "responsaveis", label: "Responsáveis", icon: Users, path: "/responsaveis", permission: "responsaveis" },
@@ -33,6 +33,10 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { hasPermission } = useUserRole();
+
+  // Filter menu items based on user permissions
+  const visibleMenuItems = menuItems.filter(item => hasPermission(item.permission, 'view'));
 
   const handleItemClick = (item: typeof menuItems[0]) => {
     onItemClick(item.id);
@@ -45,7 +49,7 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   const MenuContent = ({ showLabels = true }: { showLabels?: boolean }) => (
     <nav className="flex-1 py-6">
       <ul className="space-y-1 px-3">
-        {menuItems.map((item) => {
+        {visibleMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeItem === item.id;
           return (

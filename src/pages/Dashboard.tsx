@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -15,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ExportButton } from "@/components/export/ExportButton";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import type { ExportColumn } from "@/lib/export";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function Dashboard() {
   const [activeItem, setActiveItem] = useState("dashboard");
@@ -22,6 +24,15 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const navigate = useNavigate();
+  const { role, loading: roleLoading } = useUserRole();
+
+  // Redirect lojistas to boxes page
+  useEffect(() => {
+    if (!roleLoading && role === 'lojista') {
+      navigate('/boxes', { replace: true });
+    }
+  }, [role, roleLoading, navigate]);
 
   // Fetch summary data for export
   const { data: dashboardData } = useQuery({
