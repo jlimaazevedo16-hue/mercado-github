@@ -94,10 +94,30 @@ const Login = () => {
           return;
         }
 
-        // Look up email by CPF - try multiple formats
-        const formattedCPF = formatCPF(cpfNumbers);
-        console.log('Buscando CPF:', { raw: cpfNumbers, formatted: formattedCPF });
+        // Login via CPF precisa consultar o backend; o cliente (não autenticado) não consegue ler perfis.
+        const { data: loginData, error: cpfLoginError } = await supabase.functions.invoke('cpf-login', {
+          body: { cpf: cpfNumbers, password },
+        });
+
+        if (cpfLoginError) {
+          throw new Error(cpfLoginError.message || 'Erro ao fazer login');
+        }
+
+        const session = (loginData as any)?.session;
+        if (!session?.access_token || !session?.refresh_token) {
+          throw new Error('CPF ou senha incorretos');
+        }
+
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+        if (setSessionError) throw setSessionError;
+
+        navigate('/');
+        return;
         
+        /*
         const { data: profile, error: lookupError } = await supabase
           .from('profiles')
           .select('email, cpf')
@@ -133,6 +153,7 @@ const Login = () => {
         }
 
         emailToUse = matchedProfile.email;
+        */
       } else if (!isEmail(identifier)) {
         toast({
           title: 'Formato inválido',
