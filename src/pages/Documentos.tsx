@@ -20,6 +20,8 @@ import { ptBR } from "date-fns/locale";
 import { ExportButton } from "@/components/export/ExportButton";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import type { ExportColumn } from "@/lib/export";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useLojistaResponsavel } from "@/hooks/useLojistaResponsavel";
 
 interface UnifiedDocument {
   id: string;
@@ -99,17 +101,42 @@ const Documentos = () => {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [showExportDialog, setShowExportDialog] = useState(false);
 
+  const { role, isAdmin, isAdminMaster } = useUserRole();
+  const { responsavelId, isLojista } = useLojistaResponsavel();
+  const canDelete = isAdmin || isAdminMaster;
+
+  // Buscar boxes vinculados ao lojista
+  const { data: userBoxIds } = useQuery({
+    queryKey: ['lojista-box-ids-docs', responsavelId],
+    queryFn: async () => {
+      if (!responsavelId) return [];
+      const { data } = await supabase
+        .from('boxes')
+        .select('id')
+        .eq('responsavel_id', responsavelId);
+      return data?.map(b => b.id) || [];
+    },
+    enabled: isLojista && !!responsavelId,
+  });
+
   // Fetch box documents
   const { data: boxDocuments, isLoading: loadingBoxDocs } = useQuery({
-    queryKey: ["all-box-documents"],
+    queryKey: ["all-box-documents", isLojista, userBoxIds],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("box_documents")
         .select(`
           *,
           boxes (id, codigo, boxe)
         `)
         .order("created_at", { ascending: false });
+
+      // Filtrar para lojista: apenas documentos dos seus boxes
+      if (isLojista && userBoxIds && userBoxIds.length > 0) {
+        query = query.in('box_id', userBoxIds);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -117,15 +144,22 @@ const Documentos = () => {
 
   // Fetch responsavel documents
   const { data: responsavelDocuments, isLoading: loadingRespDocs } = useQuery({
-    queryKey: ["all-responsavel-documents"],
+    queryKey: ["all-responsavel-documents", isLojista, responsavelId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("responsavel_documents")
         .select(`
           *,
           responsaveis (id, nome)
         `)
         .order("created_at", { ascending: false });
+
+      // Filtrar para lojista: apenas seus documentos pessoais
+      if (isLojista && responsavelId) {
+        query = query.eq('responsavel_id', responsavelId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -280,9 +314,21 @@ const Documentos = () => {
 
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Gestão de Documentos</h1>
-            <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="documentos" />
+            <h1 className="text-2xl font-bold">{isLojista ? 'Meus Documentos' : 'Gestão de Documentos'}</h1>
+            {!isLojista && <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="documentos" />}
           </div>
+
+          {/* Indicador de visualização do lojista */}
+          {isLojista && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                <FileText className="h-5 w-5" />
+                <span className="font-medium">
+                  Visualizando documentos dos seus boxes e dados pessoais
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
@@ -525,14 +571,16 @@ const Documentos = () => {
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(doc)}
-                                title="Excluir"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(doc)}
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

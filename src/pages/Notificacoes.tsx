@@ -22,7 +22,8 @@ const Notificacoes = () => {
   const [activeItem, setActiveItem] = useState('notificacoes');
   const [activeTab, setActiveTab] = useState('lista');
   const [selectedPadId, setSelectedPadId] = useState<string | null>(null);
-  const { isAdmin, isAdminMaster } = useUserRole();
+  const { role, isAdmin, isAdminMaster } = useUserRole();
+  const isLojista = role === 'lojista';
   const navigate = useNavigate();
   const [showExportDialog, setShowExportDialog] = useState(false);
 
@@ -67,10 +68,10 @@ const Notificacoes = () => {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-foreground">
-                Notificações e PAD
+                {isLojista ? 'Minhas Notificações' : 'Notificações e PAD'}
               </h1>
               <div className="flex items-center gap-2">
-                <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="notificacoes" />
+                {!isLojista && <ExportButton onClick={() => setShowExportDialog(true)} permissionKey="notificacoes" />}
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/pendencias')}
