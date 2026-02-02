@@ -39,11 +39,12 @@ export function ConfiguracoesUFMS() {
   const canEdit = isAdminMaster;
 
   const { data: configuracoes, isLoading } = useQuery({
-    queryKey: ["configuracoes-administrativas"],
+    queryKey: ["configuracoes-ufms"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("configuracoes_administrativas")
         .select("*")
+        .in("chave", ["ufms_valor", "fator_condominio", "fator_aluguel"])
         .order("chave");
 
       if (error) throw error;
