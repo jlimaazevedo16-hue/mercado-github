@@ -7,44 +7,73 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   AlertTriangle, Clock, FileWarning, Wrench, Scale, Search,
-  Upload, CheckCircle, AlertCircle, Calendar, FileX, Plus, Building2
+  Upload, CheckCircle, AlertCircle, Calendar, FileX, Plus, Building2,
+  History, Eye, XCircle, RotateCcw, Send, Loader2
 } from 'lucide-react';
-import { format, differenceInDays, addDays } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { DocumentUploadDialog } from '@/components/documents/DocumentUploadDialog';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuditLog } from '@/hooks/useAuditLog';
+import type { Database } from '@/integrations/supabase/types';
+
+type PendenciaStatus = Database['public']['Enums']['pendencia_status'];
+type PendenciaTipo = Database['public']['Enums']['pendencia_tipo'];
+type PendenciaUrgencia = Database['public']['Enums']['pendencia_urgencia'];
 
 interface Pendencia {
   id: string;
-  tipo: 'notificacao' | 'certificado' | 'reforma' | 'processo' | 'documento_ausente' | 'ocorrencia';
+  created_at: string;
+  tipo: PendenciaTipo;
   titulo: string;
-  descricao: string;
+  descricao: string | null;
+  box_id: string | null;
+  responsavel_id: string | null;
+  status: PendenciaStatus;
+  urgencia: PendenciaUrgencia;
   data_vencimento: string | null;
-  status: string;
-  urgencia: 'vencido' | 'urgente' | 'proximo' | 'normal';
-  entidade_tipo: string;
-  entidade_id: string;
-  entidade_nome: string;
-  responsavel_id?: string | null;
-  em_providencia?: boolean;
-  comprovante_url?: string;
+  documento_url: string | null;
+  documento_nome: string | null;
+  motivo_rejeicao: string | null;
+  observacoes: string | null;
+  boxes?: { codigo: string; boxe: string; inquilino: string | null; setor_id: string | null } | null;
+  responsaveis?: { nome: string } | null;
 }
 
-const urgenciaLabels: Record<string, { label: string; className: string }> = {
+interface PendenciaLog {
+  id: string;
+  created_at: string;
+  status_anterior: PendenciaStatus | null;
+  status_novo: PendenciaStatus;
+  acao: string;
+  observacao: string | null;
+  user_id: string | null;
+}
+
+const statusLabels: Record<PendenciaStatus, { label: string; className: string; icon: React.ReactNode }> = {
+  PENDENTE: { label: 'Pendente', className: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300', icon: <AlertCircle className="h-3 w-3" /> },
+  EM_REGULARIZACAO: { label: 'Em Regularização', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300', icon: <Clock className="h-3 w-3" /> },
+  EM_ANALISE: { label: 'Em Análise', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', icon: <Eye className="h-3 w-3" /> },
+  REGULARIZADO: { label: 'Regularizado', className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300', icon: <CheckCircle className="h-3 w-3" /> },
+  REJEITADO: { label: 'Rejeitado', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300', icon: <XCircle className="h-3 w-3" /> },
+};
+
+const urgenciaLabels: Record<PendenciaUrgencia, { label: string; className: string }> = {
   vencido: { label: 'Vencido', className: 'bg-destructive text-destructive-foreground' },
   urgente: { label: 'Urgente', className: 'bg-orange-500 text-white' },
   proximo: { label: 'Próximo', className: 'bg-yellow-500 text-white' },
   normal: { label: 'Normal', className: 'bg-muted text-muted-foreground' },
 };
 
-const tipoIcons: Record<string, React.ReactNode> = {
+const tipoIcons: Record<PendenciaTipo, React.ReactNode> = {
   notificacao: <AlertTriangle className="h-4 w-4" />,
   certificado: <FileWarning className="h-4 w-4" />,
   reforma: <Wrench className="h-4 w-4" />,
@@ -53,7 +82,7 @@ const tipoIcons: Record<string, React.ReactNode> = {
   ocorrencia: <AlertCircle className="h-4 w-4" />,
 };
 
-const tipoLabels: Record<string, string> = {
+const tipoLabels: Record<PendenciaTipo, string> = {
   notificacao: 'Notificação',
   certificado: 'Certificado',
   reforma: 'Reforma',
@@ -62,25 +91,25 @@ const tipoLabels: Record<string, string> = {
   ocorrencia: 'Ocorrência',
 };
 
-// Documentos obrigatórios por tipo de box
-const DOCUMENTOS_OBRIGATORIOS = [
-  'Alvará de Funcionamento',
-  'Licença Sanitária',
-  'Certificado de Higiene',
-];
-
 export const PendenciasLista = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { role, isAdmin, isAdminMaster } = useUserRole();
+  const { logAction } = useAuditLog();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [urgenciaFilter, setUrgenciaFilter] = useState<string>('all');
-  const [showProvidenciaDialog, setShowProvidenciaDialog] = useState(false);
+  const [setorFilter, setSetorFilter] = useState<string>('all');
+  
+  // Dialogs
   const [selectedPendencia, setSelectedPendencia] = useState<Pendencia | null>(null);
-  const [providenciaDescricao, setProvidenciaDescricao] = useState('');
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showActionDialog, setShowActionDialog] = useState(false);
+  const [actionType, setActionType] = useState<'regularizar' | 'enviar_analise' | 'aprovar' | 'rejeitar' | 'reabrir'>('regularizar');
+  const [actionObservacao, setActionObservacao] = useState('');
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [showOcorrenciaDialog, setShowOcorrenciaDialog] = useState(false);
   const [ocorrenciaData, setOcorrenciaData] = useState({
     box_id: '',
@@ -89,417 +118,329 @@ export const PendenciasLista = () => {
     data_vencimento: '',
   });
 
-  // Buscar boxes do usuário se for lojista (por email OU CPF)
-  const { data: userBoxes } = useQuery({
-    queryKey: ['user-boxes', user?.id],
+  const isLojistaView = role === 'lojista';
+
+  // Fetch setores for filter
+  const { data: setores } = useQuery({
+    queryKey: ['setores-filter'],
     queryFn: async () => {
-      if (isAdmin || isAdminMaster) return null;
-      
-      // Buscar perfil do usuário logado (email e possível CPF)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('user_id', user?.id || '')
-        .single();
-
-      if (!profile?.email) return { responsavelId: null, boxes: [] };
-
-      // Primeiro tenta buscar por email
-      let { data: responsavel } = await supabase
-        .from('responsaveis')
-        .select('id, cpf')
-        .eq('email', profile.email)
-        .maybeSingle();
-
-      // Se não encontrou por email, buscar todos os responsáveis para tentar match por CPF
-      // O CPF do lojista pode estar no metadata do auth ou em outro campo
-      if (!responsavel) {
-        // Tentar buscar pelo telefone que pode estar no perfil como identificador alternativo
-        const { data: profileFull } = await supabase
-          .from('profiles')
-          .select('telefone')
-          .eq('user_id', user?.id || '')
-          .single();
-        
-        if (profileFull?.telefone) {
-          const { data: respByPhone } = await supabase
-            .from('responsaveis')
-            .select('id, cpf')
-            .eq('telefone', profileFull.telefone)
-            .maybeSingle();
-          
-          if (respByPhone) {
-            responsavel = respByPhone;
-          }
-        }
-      }
-
-      if (!responsavel) return { responsavelId: null, boxes: [] };
-
-      const { data: boxes } = await supabase
-        .from('boxes')
-        .select('id, codigo')
-        .eq('responsavel_id', responsavel.id);
-
-      return { responsavelId: responsavel.id, boxes: boxes || [] };
+      const { data } = await supabase.from('setores').select('id, nome').order('nome');
+      return data || [];
     },
-    enabled: !!user && role === 'lojista',
+    enabled: isAdmin || isAdminMaster,
   });
 
-  // Buscar boxes para seleção na ocorrência manual
+  // Fetch boxes for new occurrence
   const { data: allBoxes } = useQuery({
-    queryKey: ['all-boxes-select'],
+    queryKey: ['all-boxes-pendencias'],
     queryFn: async () => {
       const { data } = await supabase
         .from('boxes')
-        .select('id, codigo, boxe, inquilino, responsavel_id')
+        .select('id, codigo, boxe, inquilino, responsavel_id, setor_id')
         .order('codigo');
       return data || [];
     },
     enabled: isAdmin || isAdminMaster,
   });
 
-  const calculateUrgencia = (dataVencimento: string | null): 'vencido' | 'urgente' | 'proximo' | 'normal' => {
+  // Fetch pendências
+  const { data: pendencias, isLoading } = useQuery({
+    queryKey: ['pendencias-v2'],
+    queryFn: async () => {
+      let query = supabase
+        .from('pendencias')
+        .select(`
+          *,
+          boxes (codigo, boxe, inquilino, setor_id),
+          responsaveis (nome)
+        `)
+        .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as Pendencia[];
+    },
+  });
+
+  // Fetch logs for selected pendencia
+  const { data: pendenciaLogs } = useQuery({
+    queryKey: ['pendencia-logs', selectedPendencia?.id],
+    queryFn: async () => {
+      if (!selectedPendencia?.id) return [];
+      const { data } = await supabase
+        .from('pendencia_logs')
+        .select('*')
+        .eq('pendencia_id', selectedPendencia.id)
+        .order('created_at', { ascending: false });
+      return (data || []) as PendenciaLog[];
+    },
+    enabled: !!selectedPendencia?.id,
+  });
+
+  // Status transition mutation
+  const transitionMutation = useMutation({
+    mutationFn: async ({ 
+      pendenciaId, 
+      novoStatus, 
+      acao, 
+      observacao,
+      motivoRejeicao 
+    }: { 
+      pendenciaId: string; 
+      novoStatus: PendenciaStatus; 
+      acao: string; 
+      observacao?: string;
+      motivoRejeicao?: string;
+    }) => {
+      const pendencia = pendencias?.find(p => p.id === pendenciaId);
+      
+      // Update pendencia
+      const updateData: Record<string, unknown> = { status: novoStatus };
+      if (motivoRejeicao) updateData.motivo_rejeicao = motivoRejeicao;
+      if (novoStatus === 'REGULARIZADO') updateData.motivo_rejeicao = null;
+
+      const { error: updateError } = await supabase
+        .from('pendencias')
+        .update(updateData)
+        .eq('id', pendenciaId);
+
+      if (updateError) throw updateError;
+
+      // Create log
+      const { error: logError } = await supabase
+        .from('pendencia_logs')
+        .insert([{
+          pendencia_id: pendenciaId,
+          user_id: user?.id,
+          status_anterior: pendencia?.status,
+          status_novo: novoStatus,
+          acao,
+          observacao,
+        }]);
+
+      if (logError) throw logError;
+
+      // Audit log
+      await logAction({
+        action: `pendencia_${acao}`,
+        tableName: 'pendencias',
+        recordId: pendenciaId,
+        oldValues: { status: pendencia?.status },
+        newValues: { status: novoStatus },
+      });
+
+      return { pendencia, novoStatus };
+    },
+    onSuccess: ({ novoStatus }) => {
+      queryClient.invalidateQueries({ queryKey: ['pendencias-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencia-logs'] });
+      
+      const messages: Record<string, string> = {
+        PENDENTE: 'Pendência reaberta',
+        EM_REGULARIZACAO: 'Pendência marcada como "Em Regularização"',
+        EM_ANALISE: 'Documento enviado para análise',
+        REGULARIZADO: 'Pendência aprovada e regularizada',
+        REJEITADO: 'Pendência rejeitada',
+      };
+      
+      toast.success(messages[novoStatus] || 'Status atualizado');
+      setShowActionDialog(false);
+      setActionObservacao('');
+      setMotivoRejeicao('');
+    },
+    onError: (error) => {
+      console.error('Transition error:', error);
+      toast.error('Erro ao atualizar status');
+    },
+  });
+
+  // Create occurrence mutation
+  const createOcorrenciaMutation = useMutation({
+    mutationFn: async (data: typeof ocorrenciaData) => {
+      const box = allBoxes?.find(b => b.id === data.box_id);
+      
+      const { data: newPendencia, error } = await supabase
+        .from('pendencias')
+        .insert([{
+          tipo: 'ocorrencia' as PendenciaTipo,
+          titulo: data.titulo,
+          descricao: data.descricao,
+          box_id: data.box_id,
+          responsavel_id: box?.responsavel_id,
+          data_vencimento: data.data_vencimento || null,
+          status: 'PENDENTE' as PendenciaStatus,
+          urgencia: calculateUrgencia(data.data_vencimento) as PendenciaUrgencia,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create initial log
+      await supabase.from('pendencia_logs').insert([{
+        pendencia_id: newPendencia.id,
+        user_id: user?.id,
+        status_novo: 'PENDENTE',
+        acao: 'criacao',
+        observacao: 'Ocorrência criada manualmente',
+      }]);
+
+      return newPendencia;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendencias-v2'] });
+      toast.success('Ocorrência registrada com sucesso');
+      setShowOcorrenciaDialog(false);
+      setOcorrenciaData({ box_id: '', titulo: '', descricao: '', data_vencimento: '' });
+    },
+    onError: (error) => {
+      console.error('Create error:', error);
+      toast.error('Erro ao criar ocorrência');
+    },
+  });
+
+  const calculateUrgencia = (dataVencimento: string | null): PendenciaUrgencia => {
     if (!dataVencimento) return 'normal';
-    const today = new Date();
-    const vencimento = new Date(dataVencimento);
-    const dias = differenceInDays(vencimento, today);
-    
+    const dias = differenceInDays(new Date(dataVencimento), new Date());
     if (dias < 0) return 'vencido';
     if (dias <= 7) return 'urgente';
     if (dias <= 30) return 'proximo';
     return 'normal';
   };
 
-  // Fetch all pending items from different sources
-  const { data: pendencias, isLoading } = useQuery({
-    queryKey: ['pendencias', userBoxes],
-    queryFn: async () => {
-      const allPendencias: Pendencia[] = [];
-      const userBoxIds = userBoxes?.boxes?.map(b => b.id) || [];
-      const isLojistaView = role === 'lojista' && userBoxIds.length > 0;
+  const handleAction = (pendencia: Pendencia, action: typeof actionType) => {
+    setSelectedPendencia(pendencia);
+    setActionType(action);
+    setShowActionDialog(true);
+  };
 
-      // 1. Notificações pendentes
-      let notificacoesQuery = supabase
-        .from('notificacoes')
-        .select(`
-          id, numero_interno, descricao_infracao, prazo_defesa, prazo_adequacao, status,
-          box_id, responsavel_id,
-          boxes (codigo, boxe),
-          responsaveis (nome)
-        `)
-        .in('status', ['pendente', 'em_analise']);
+  const executeAction = () => {
+    if (!selectedPendencia) return;
 
-      if (isLojistaView) {
-        notificacoesQuery = notificacoesQuery.in('box_id', userBoxIds);
-      }
+    const statusMap: Record<typeof actionType, PendenciaStatus> = {
+      regularizar: 'EM_REGULARIZACAO',
+      enviar_analise: 'EM_ANALISE',
+      aprovar: 'REGULARIZADO',
+      rejeitar: 'REJEITADO',
+      reabrir: 'PENDENTE',
+    };
 
-      const { data: notificacoes } = await notificacoesQuery;
+    transitionMutation.mutate({
+      pendenciaId: selectedPendencia.id,
+      novoStatus: statusMap[actionType],
+      acao: actionType,
+      observacao: actionObservacao,
+      motivoRejeicao: actionType === 'rejeitar' ? motivoRejeicao : undefined,
+    });
+  };
 
-      notificacoes?.forEach((n: any) => {
-        const dataVenc = n.prazo_adequacao || n.prazo_defesa;
-        allPendencias.push({
-          id: n.id,
-          tipo: 'notificacao',
-          titulo: n.numero_interno || 'Notificação',
-          descricao: n.descricao_infracao?.substring(0, 100) + '...',
-          data_vencimento: dataVenc,
-          status: n.status,
-          urgencia: calculateUrgencia(dataVenc),
-          entidade_tipo: 'box',
-          entidade_id: n.boxes?.codigo || '',
-          entidade_nome: `${n.boxes?.codigo || ''} - ${n.responsaveis?.nome || 'N/A'}`,
-          responsavel_id: n.responsavel_id,
-        });
-      });
-
-      // 2. Certificados vencidos ou próximos do vencimento
-      let boxDocsQuery = supabase
-        .from('box_documents')
-        .select(`
-          id, nome, tipo, data_validade,
-          boxes!box_documents_box_id_fkey (id, codigo, boxe, inquilino, responsavel_id)
-        `)
-        .not('data_validade', 'is', null);
-
-      if (isLojistaView) {
-        boxDocsQuery = boxDocsQuery.in('box_id', userBoxIds);
-      }
-
-      const { data: boxDocs } = await boxDocsQuery;
-
-      boxDocs?.forEach((doc: any) => {
-        const urgencia = calculateUrgencia(doc.data_validade);
-        if (urgencia === 'vencido' || urgencia === 'urgente' || urgencia === 'proximo') {
-          allPendencias.push({
-            id: doc.id,
-            tipo: 'certificado',
-            titulo: doc.nome,
-            descricao: `${doc.tipo || 'Documento'} - ${urgencia === 'vencido' ? 'Vencido' : 'Próximo do vencimento'}`,
-            data_vencimento: doc.data_validade,
-            status: urgencia === 'vencido' ? 'vencido' : 'pendente',
-            urgencia,
-            entidade_tipo: 'box',
-            entidade_id: doc.boxes?.id || '',
-            entidade_nome: `${doc.boxes?.codigo || ''} - ${doc.boxes?.inquilino || 'N/A'}`,
-            responsavel_id: doc.boxes?.responsavel_id,
-          });
-        }
-      });
-
-      // 3. Documentos ausentes (verificar quais boxes não têm documentos obrigatórios)
-      let boxesForDocsQuery = supabase
-        .from('boxes')
-        .select('id, codigo, inquilino, responsavel_id, status')
-        .eq('status', 'ASSINADO');
-
-      if (isLojistaView) {
-        boxesForDocsQuery = boxesForDocsQuery.in('id', userBoxIds);
-      }
-
-      const { data: boxesAtivos } = await boxesForDocsQuery;
-
-      if (boxesAtivos) {
-        for (const box of boxesAtivos) {
-          const { data: docsDoBox } = await supabase
-            .from('box_documents')
-            .select('nome, tipo')
-            .eq('box_id', box.id);
-
-          const docsExistentes = docsDoBox?.map(d => d.tipo || d.nome) || [];
-
-          DOCUMENTOS_OBRIGATORIOS.forEach(docObrigatorio => {
-            const temDoc = docsExistentes.some(d => 
-              d.toLowerCase().includes(docObrigatorio.toLowerCase().split(' ')[0])
-            );
-            
-            if (!temDoc) {
-              allPendencias.push({
-                id: `ausente-${box.id}-${docObrigatorio}`,
-                tipo: 'documento_ausente',
-                titulo: docObrigatorio,
-                descricao: `Documento obrigatório não encontrado`,
-                data_vencimento: null,
-                status: 'ausente',
-                urgencia: 'urgente',
-                entidade_tipo: 'box',
-                entidade_id: box.id,
-                entidade_nome: `${box.codigo} - ${box.inquilino || 'N/A'}`,
-                responsavel_id: box.responsavel_id,
-              });
-            }
-          });
-        }
-      }
-
-      // 4. Reformas/Manutenções pendentes
-      let manutencoesQuery = supabase
-        .from('box_maintenances')
-        .select(`
-          id, tipo, descricao, data_solicitacao, status,
-          boxes!box_maintenances_box_id_fkey (id, codigo, inquilino, responsavel_id)
-        `)
-        .in('status', ['PENDENTE', 'EM_ANDAMENTO']);
-
-      if (isLojistaView) {
-        manutencoesQuery = manutencoesQuery.in('box_id', userBoxIds);
-      }
-
-      const { data: manutencoes } = await manutencoesQuery;
-
-      manutencoes?.forEach((m: any) => {
-        const dataVenc = m.data_solicitacao ? 
-          format(addDays(new Date(m.data_solicitacao), 30), 'yyyy-MM-dd') : null;
-        allPendencias.push({
-          id: m.id,
-          tipo: 'reforma',
-          titulo: m.tipo,
-          descricao: m.descricao?.substring(0, 100) || 'Manutenção pendente',
-          data_vencimento: dataVenc,
-          status: m.status,
-          urgencia: calculateUrgencia(dataVenc),
-          entidade_tipo: 'box',
-          entidade_id: m.boxes?.id || '',
-          entidade_nome: `${m.boxes?.codigo || ''} - ${m.boxes?.inquilino || 'N/A'}`,
-          responsavel_id: m.boxes?.responsavel_id,
-        });
-      });
-
-      // 5. Processos aguardando decisão
-      let padsQuery = supabase
-        .from('pads')
-        .select(`
-          id, numero_processo, status, data_autuacao,
-          box_id, responsavel_id,
-          boxes (codigo, inquilino),
-          responsaveis (nome)
-        `)
-        .not('status', 'in', '(arquivado,decisao_final)');
-
-      if (isLojistaView) {
-        padsQuery = padsQuery.in('box_id', userBoxIds);
-      }
-
-      const { data: pads } = await padsQuery;
-
-      pads?.forEach((p: any) => {
-        const isUrgent = ['julgamento', 'recurso'].includes(p.status);
-        allPendencias.push({
-          id: p.id,
-          tipo: 'processo',
-          titulo: p.numero_processo,
-          descricao: `Status: ${p.status}`,
-          data_vencimento: null,
-          status: p.status,
-          urgencia: isUrgent ? 'urgente' : 'normal',
-          entidade_tipo: 'pad',
-          entidade_id: p.id,
-          entidade_nome: `${p.boxes?.codigo || ''} - ${p.responsaveis?.nome || 'N/A'}`,
-          responsavel_id: p.responsavel_id,
-        });
-      });
-
-      // Sort by urgency
-      const urgencyOrder = { vencido: 0, urgente: 1, proximo: 2, normal: 3 };
-      return allPendencias.sort((a, b) => urgencyOrder[a.urgencia] - urgencyOrder[b.urgencia]);
-    },
-  });
-
+  // Filter pendencias
   const filteredPendencias = pendencias?.filter((p) => {
     const matchesSearch = !searchTerm || 
       p.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.entidade_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+      p.boxes?.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.responsaveis?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesTipo = tipoFilter === 'all' || p.tipo === tipoFilter;
+    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     const matchesUrgencia = urgenciaFilter === 'all' || p.urgencia === urgenciaFilter;
+    const matchesSetor = setorFilter === 'all' || p.boxes?.setor_id === setorFilter;
 
-    return matchesSearch && matchesTipo && matchesUrgencia;
+    return matchesSearch && matchesTipo && matchesStatus && matchesUrgencia && matchesSetor;
   });
 
   // Stats
   const stats = {
     total: pendencias?.length || 0,
-    vencidos: pendencias?.filter(p => p.urgencia === 'vencido').length || 0,
-    urgentes: pendencias?.filter(p => p.urgencia === 'urgente').length || 0,
-    proximos: pendencias?.filter(p => p.urgencia === 'proximo').length || 0,
-    documentosAusentes: pendencias?.filter(p => p.tipo === 'documento_ausente').length || 0,
+    pendentes: pendencias?.filter(p => p.status === 'PENDENTE').length || 0,
+    emRegularizacao: pendencias?.filter(p => p.status === 'EM_REGULARIZACAO').length || 0,
+    emAnalise: pendencias?.filter(p => p.status === 'EM_ANALISE').length || 0,
+    regularizados: pendencias?.filter(p => p.status === 'REGULARIZADO').length || 0,
+    rejeitados: pendencias?.filter(p => p.status === 'REJEITADO').length || 0,
   };
 
-  const handleProvidencia = (pendencia: Pendencia) => {
-    setSelectedPendencia(pendencia);
-    setShowProvidenciaDialog(true);
-  };
+  const getAvailableActions = (pendencia: Pendencia) => {
+    const actions: Array<{ action: typeof actionType; label: string; icon: React.ReactNode; variant?: 'default' | 'destructive' | 'outline' }> = [];
 
-  const handleDocumentUpload = async (docData: {
-    nome: string;
-    tipo: string;
-    descricao: string;
-    data_emissao: string;
-    data_validade: string;
-    arquivo_url: string;
-  }) => {
-    toast.success('Comprovante anexado! Pendência marcada como "Em Providência"');
-    setShowUploadDialog(false);
-    setShowProvidenciaDialog(false);
-    setSelectedPendencia(null);
-    setProvidenciaDescricao('');
-  };
+    if (isLojistaView) {
+      // Lojista actions
+      if (pendencia.status === 'PENDENTE' || pendencia.status === 'REJEITADO') {
+        actions.push({ action: 'regularizar', label: 'Estou Providenciando', icon: <Clock className="h-4 w-4" /> });
+      }
+      if (pendencia.status === 'EM_REGULARIZACAO') {
+        actions.push({ action: 'enviar_analise', label: 'Enviar para Análise', icon: <Send className="h-4 w-4" /> });
+      }
+    } else {
+      // Admin actions
+      if (pendencia.status === 'EM_ANALISE') {
+        actions.push({ action: 'aprovar', label: 'Aprovar', icon: <CheckCircle className="h-4 w-4" /> });
+        actions.push({ action: 'rejeitar', label: 'Rejeitar', icon: <XCircle className="h-4 w-4" />, variant: 'destructive' });
+      }
+      if (pendencia.status === 'REGULARIZADO' || pendencia.status === 'REJEITADO') {
+        actions.push({ action: 'reabrir', label: 'Reabrir', icon: <RotateCcw className="h-4 w-4" />, variant: 'outline' });
+      }
+    }
 
-  const handleCreateOcorrencia = () => {
-    // Criar uma pendência manual (ocorrência)
-    toast.success('Ocorrência registrada com sucesso!');
-    setShowOcorrenciaDialog(false);
-    setOcorrenciaData({ box_id: '', titulo: '', descricao: '', data_vencimento: '' });
-    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
+    return actions;
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Carregando pendências...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* View indicator for lojista */}
-      {role === 'lojista' && userBoxes?.boxes && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-            <Building2 className="h-5 w-5" />
-            <span className="font-medium">
-              Visualizando pendências dos seus boxes: {userBoxes.boxes.map(b => b.codigo).join(', ')}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                <Clock className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold">{stats.total}</p>
+              <p className="text-xs text-muted-foreground">Total</p>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-destructive">
+        <Card className="border-red-500/50">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="h-6 w-6 text-destructive" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Vencidos</p>
-                <p className="text-2xl font-bold text-destructive">{stats.vencidos}</p>
-              </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{stats.pendentes}</p>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-orange-500">
+        <Card className="border-yellow-500/50">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-orange-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Urgentes</p>
-                <p className="text-2xl font-bold text-orange-500">{stats.urgentes}</p>
-              </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-yellow-600">{stats.emRegularizacao}</p>
+              <p className="text-xs text-muted-foreground">Em Regularização</p>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-yellow-500">
+        <Card className="border-blue-500/50">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-yellow-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Próximos</p>
-                <p className="text-2xl font-bold text-yellow-500">{stats.proximos}</p>
-              </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.emAnalise}</p>
+              <p className="text-xs text-muted-foreground">Em Análise</p>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-purple-500">
+        <Card className="border-green-500/50">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-                <FileX className="h-6 w-6 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Docs Ausentes</p>
-                <p className="text-2xl font-bold text-purple-500">{stats.documentosAusentes}</p>
-              </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{stats.regularizados}</p>
+              <p className="text-xs text-muted-foreground">Regularizados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-purple-500/50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{stats.rejeitados}</p>
+              <p className="text-xs text-muted-foreground">Rejeitados</p>
             </div>
           </CardContent>
         </Card>
@@ -508,11 +449,11 @@ export const PendenciasLista = () => {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
               Pendências
-              {role === 'lojista' && <Badge variant="secondary">Meus Boxes</Badge>}
+              {isLojistaView && <Badge variant="secondary">Meus Boxes</Badge>}
             </CardTitle>
             {(isAdmin || isAdminMaster) && (
               <Button onClick={() => setShowOcorrenciaDialog(true)}>
@@ -523,42 +464,68 @@ export const PendenciasLista = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 relative">
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="flex-1 min-w-[200px] relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar pendências..."
+                placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="PENDENTE">Pendente</SelectItem>
+                <SelectItem value="EM_REGULARIZACAO">Em Regularização</SelectItem>
+                <SelectItem value="EM_ANALISE">Em Análise</SelectItem>
+                <SelectItem value="REGULARIZADO">Regularizado</SelectItem>
+                <SelectItem value="REJEITADO">Rejeitado</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={tipoFilter} onValueChange={setTipoFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-40">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os Tipos</SelectItem>
-                <SelectItem value="notificacao">Notificações</SelectItem>
-                <SelectItem value="certificado">Certificados</SelectItem>
-                <SelectItem value="documento_ausente">Docs Ausentes</SelectItem>
-                <SelectItem value="reforma">Reformas</SelectItem>
-                <SelectItem value="processo">Processos</SelectItem>
-                <SelectItem value="ocorrencia">Ocorrências</SelectItem>
+                <SelectItem value="all">Todos Tipos</SelectItem>
+                <SelectItem value="notificacao">Notificação</SelectItem>
+                <SelectItem value="certificado">Certificado</SelectItem>
+                <SelectItem value="documento_ausente">Doc. Ausente</SelectItem>
+                <SelectItem value="reforma">Reforma</SelectItem>
+                <SelectItem value="processo">Processo</SelectItem>
+                <SelectItem value="ocorrencia">Ocorrência</SelectItem>
               </SelectContent>
             </Select>
             <Select value={urgenciaFilter} onValueChange={setUrgenciaFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-36">
                 <SelectValue placeholder="Urgência" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="vencido">Vencidos</SelectItem>
-                <SelectItem value="urgente">Urgentes</SelectItem>
-                <SelectItem value="proximo">Próximos</SelectItem>
+                <SelectItem value="vencido">Vencido</SelectItem>
+                <SelectItem value="urgente">Urgente</SelectItem>
+                <SelectItem value="proximo">Próximo</SelectItem>
                 <SelectItem value="normal">Normal</SelectItem>
               </SelectContent>
             </Select>
+            {(isAdmin || isAdminMaster) && setores && setores.length > 0 && (
+              <Select value={setorFilter} onValueChange={setSetorFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Setores</SelectItem>
+                  {setores.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Table */}
@@ -567,60 +534,85 @@ export const PendenciasLista = () => {
               <TableRow>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Título</TableHead>
-                <TableHead>Entidade</TableHead>
+                <TableHead>Box</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead>Vencimento</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Urgência</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPendencias?.map((pendencia) => (
-                <TableRow key={`${pendencia.tipo}-${pendencia.id}`}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {tipoIcons[pendencia.tipo]}
-                      <span>{tipoLabels[pendencia.tipo]}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{pendencia.titulo}</p>
-                      <p className="text-sm text-muted-foreground truncate max-w-xs">
-                        {pendencia.descricao}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{pendencia.entidade_nome}</TableCell>
-                  <TableCell>
-                    {pendencia.data_vencimento 
-                      ? format(new Date(pendencia.data_vencimento), 'dd/MM/yyyy', { locale: ptBR })
-                      : '-'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={urgenciaLabels[pendencia.urgencia].className}>
-                      {urgenciaLabels[pendencia.urgencia].label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleProvidencia(pendencia)}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Em Providência
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredPendencias?.map((pendencia) => {
+                const actions = getAvailableActions(pendencia);
+                return (
+                  <TableRow key={pendencia.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {tipoIcons[pendencia.tipo]}
+                        <span className="text-xs">{tipoLabels[pendencia.tipo]}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-sm">{pendencia.titulo}</p>
+                        {pendencia.descricao && (
+                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {pendencia.descricao}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{pendencia.boxes?.codigo || '-'}</TableCell>
+                    <TableCell className="text-sm">{pendencia.responsaveis?.nome || '-'}</TableCell>
+                    <TableCell className="text-sm">
+                      {pendencia.data_vencimento 
+                        ? format(new Date(pendencia.data_vencimento), 'dd/MM/yyyy', { locale: ptBR })
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`gap-1 ${statusLabels[pendencia.status].className}`}>
+                        {statusLabels[pendencia.status].icon}
+                        {statusLabels[pendencia.status].label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={urgenciaLabels[pendencia.urgencia].className}>
+                        {urgenciaLabels[pendencia.urgencia].label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 flex-wrap">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPendencia(pendencia);
+                            setShowDetailDialog(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {actions.map((act) => (
+                          <Button
+                            key={act.action}
+                            variant={act.variant || 'outline'}
+                            size="sm"
+                            onClick={() => handleAction(pendencia, act.action)}
+                          >
+                            {act.icon}
+                          </Button>
+                        ))}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {(!filteredPendencias || filteredPendencias.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {role === 'lojista' 
-                      ? 'Nenhuma pendência encontrada para seus boxes'
-                      : 'Nenhuma pendência encontrada'
-                    }
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    Nenhuma pendência encontrada
                   </TableCell>
                 </TableRow>
               )}
@@ -629,64 +621,199 @@ export const PendenciasLista = () => {
         </CardContent>
       </Card>
 
-      {/* Providência Dialog */}
-      <Dialog open={showProvidenciaDialog} onOpenChange={setShowProvidenciaDialog}>
+      {/* Detail Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedPendencia && tipoIcons[selectedPendencia.tipo]}
+              {selectedPendencia?.titulo}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPendencia && (
+            <Tabs defaultValue="info" className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="info">Informações</TabsTrigger>
+                <TabsTrigger value="historico">
+                  Histórico
+                  {pendenciaLogs && pendenciaLogs.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">{pendenciaLogs.length}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="info" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Status</Label>
+                    <Badge className={`mt-1 gap-1 ${statusLabels[selectedPendencia.status].className}`}>
+                      {statusLabels[selectedPendencia.status].icon}
+                      {statusLabels[selectedPendencia.status].label}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Urgência</Label>
+                    <Badge className={`mt-1 ${urgenciaLabels[selectedPendencia.urgencia].className}`}>
+                      {urgenciaLabels[selectedPendencia.urgencia].label}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Box</Label>
+                    <p className="font-medium">{selectedPendencia.boxes?.codigo || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Responsável</Label>
+                    <p className="font-medium">{selectedPendencia.responsaveis?.nome || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Vencimento</Label>
+                    <p className="font-medium">
+                      {selectedPendencia.data_vencimento 
+                        ? format(new Date(selectedPendencia.data_vencimento), 'dd/MM/yyyy', { locale: ptBR })
+                        : '-'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Criado em</Label>
+                    <p className="font-medium">
+                      {format(new Date(selectedPendencia.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+                {selectedPendencia.descricao && (
+                  <div>
+                    <Label className="text-muted-foreground">Descrição</Label>
+                    <p className="mt-1">{selectedPendencia.descricao}</p>
+                  </div>
+                )}
+                {selectedPendencia.motivo_rejeicao && (
+                  <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <Label className="text-red-700 dark:text-red-400">Motivo da Rejeição</Label>
+                    <p className="mt-1 text-red-700 dark:text-red-300">{selectedPendencia.motivo_rejeicao}</p>
+                  </div>
+                )}
+                {selectedPendencia.documento_url && (
+                  <div>
+                    <Label className="text-muted-foreground">Documento Anexado</Label>
+                    <a 
+                      href={selectedPendencia.documento_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary underline block mt-1"
+                    >
+                      {selectedPendencia.documento_nome || 'Ver documento'}
+                    </a>
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="historico" className="mt-4">
+                <ScrollArea className="h-[300px]">
+                  {pendenciaLogs && pendenciaLogs.length > 0 ? (
+                    <div className="space-y-3">
+                      {pendenciaLogs.map((log) => (
+                        <div key={log.id} className="flex gap-3 p-3 bg-muted/50 rounded-lg">
+                          <History className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {log.status_anterior && (
+                                <>
+                                  <Badge variant="outline" className="text-xs">
+                                    {statusLabels[log.status_anterior]?.label}
+                                  </Badge>
+                                  <span className="text-muted-foreground">→</span>
+                                </>
+                              )}
+                              <Badge className={`text-xs ${statusLabels[log.status_novo].className}`}>
+                                {statusLabels[log.status_novo].label}
+                              </Badge>
+                            </div>
+                            {log.observacao && (
+                              <p className="text-sm mt-1">{log.observacao}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nenhum histórico disponível
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Action Dialog */}
+      <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Marcar como "Em Providência"</DialogTitle>
+            <DialogTitle>
+              {actionType === 'regularizar' && 'Marcar como "Em Regularização"'}
+              {actionType === 'enviar_analise' && 'Enviar para Análise'}
+              {actionType === 'aprovar' && 'Aprovar Regularização'}
+              {actionType === 'rejeitar' && 'Rejeitar'}
+              {actionType === 'reabrir' && 'Reabrir Pendência'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedPendencia?.titulo} - {selectedPendencia?.boxes?.codigo}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {actionType === 'rejeitar' && (
+              <div>
+                <Label>Motivo da Rejeição *</Label>
+                <Textarea
+                  value={motivoRejeicao}
+                  onChange={(e) => setMotivoRejeicao(e.target.value)}
+                  placeholder="Informe o motivo da rejeição..."
+                  rows={3}
+                />
+              </div>
+            )}
             <div>
-              <Label>Pendência</Label>
-              <p className="font-medium">{selectedPendencia?.titulo}</p>
-              <p className="text-sm text-muted-foreground">{selectedPendencia?.entidade_nome}</p>
-            </div>
-            <div>
-              <Label>Descrição da providência</Label>
+              <Label>Observação {actionType !== 'rejeitar' && '(opcional)'}</Label>
               <Textarea
-                value={providenciaDescricao}
-                onChange={(e) => setProvidenciaDescricao(e.target.value)}
-                placeholder="Descreva a ação em andamento..."
-                rows={3}
+                value={actionObservacao}
+                onChange={(e) => setActionObservacao(e.target.value)}
+                placeholder="Adicione uma observação..."
+                rows={2}
               />
             </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowUploadDialog(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Anexar Comprovante
-            </Button>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowProvidenciaDialog(false)}>
+            <Button variant="outline" onClick={() => setShowActionDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => {
-              toast.success('Pendência marcada como "Em Providência"');
-              setShowProvidenciaDialog(false);
-              setSelectedPendencia(null);
-              setProvidenciaDescricao('');
-            }}>
-              Salvar
+            <Button 
+              onClick={executeAction}
+              disabled={transitionMutation.isPending || (actionType === 'rejeitar' && !motivoRejeicao)}
+              variant={actionType === 'rejeitar' ? 'destructive' : 'default'}
+            >
+              {transitionMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Nova Ocorrência Dialog - Only for Admin */}
+      {/* New Occurrence Dialog */}
       <Dialog open={showOcorrenciaDialog} onOpenChange={setShowOcorrenciaDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Registrar Nova Ocorrência
+              Nova Ocorrência
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Box</Label>
+              <Label>Box *</Label>
               <Select
                 value={ocorrenciaData.box_id}
                 onValueChange={(v) => setOcorrenciaData({ ...ocorrenciaData, box_id: v })}
@@ -704,7 +831,7 @@ export const PendenciasLista = () => {
               </Select>
             </div>
             <div>
-              <Label>Título da Ocorrência</Label>
+              <Label>Título *</Label>
               <Input
                 value={ocorrenciaData.titulo}
                 onChange={(e) => setOcorrenciaData({ ...ocorrenciaData, titulo: e.target.value })}
@@ -734,25 +861,15 @@ export const PendenciasLista = () => {
               Cancelar
             </Button>
             <Button 
-              onClick={handleCreateOcorrencia}
-              disabled={!ocorrenciaData.box_id || !ocorrenciaData.titulo}
+              onClick={() => createOcorrenciaMutation.mutate(ocorrenciaData)}
+              disabled={createOcorrenciaMutation.isPending || !ocorrenciaData.box_id || !ocorrenciaData.titulo}
             >
-              Registrar Ocorrência
+              {createOcorrenciaMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Registrar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Upload Dialog - Only visible when we have a selected pendencia with an entity */}
-      {showUploadDialog && selectedPendencia?.entidade_id && (
-        <DocumentUploadDialog
-          open={showUploadDialog}
-          onOpenChange={setShowUploadDialog}
-          onUploadComplete={handleDocumentUpload}
-          entityType="box"
-          entityId={selectedPendencia.entidade_id}
-        />
-      )}
     </div>
   );
 };
