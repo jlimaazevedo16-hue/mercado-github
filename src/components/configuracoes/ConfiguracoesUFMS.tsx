@@ -271,9 +271,9 @@ export function ConfiguracoesUFMS() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <Calculator className="h-5 w-5" />
             <div>
-              <CardTitle>Configurações Administrativas</CardTitle>
+              <CardTitle>UFMS e Fatores de Cálculo</CardTitle>
               <CardDescription>
                 Gerencie os valores base para cálculos de taxas e multas
               </CardDescription>
