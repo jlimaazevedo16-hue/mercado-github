@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,12 +11,17 @@ import { InstituicaoConfig } from "@/components/configuracoes/InstituicaoConfig"
 import { BackupManager } from "@/components/configuracoes/BackupManager";
 import { EmailConfig } from "@/components/configuracoes/EmailConfig";
 import { GestaoUsuariosTab } from "@/components/configuracoes/GestaoUsuariosTab";
+import { IntegracoesTab } from "@/components/configuracoes/IntegracoesTab";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin, Mail, Users } from "lucide-react";
+import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin, Mail, Users, Plug } from "lucide-react";
 
 export default function Configuracoes() {
+  const [searchParams] = useSearchParams();
   const [activeItem, setActiveItem] = useState("configuracoes");
   const { isAdminMaster } = useUserRole();
+  
+  // Determinar aba padrão baseado nos query params
+  const defaultTab = searchParams.get('tab') || 'ufms';
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -36,8 +42,15 @@ export default function Configuracoes() {
               </div>
             </div>
 
-            <Tabs defaultValue="ufms" className="space-y-4">
+            <Tabs defaultValue={defaultTab} className="space-y-4">
               <TabsList className="flex-wrap h-auto gap-1">
+                {isAdminMaster && (
+                  <TabsTrigger value="integracoes" className="gap-2">
+                    <Plug className="h-4 w-4" />
+                    <span className="hidden sm:inline">Integrações/APIs</span>
+                    <span className="sm:hidden">APIs</span>
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="ufms" className="gap-2">
                   <Calculator className="h-4 w-4" />
                   <span className="hidden sm:inline">UFMS e Fatores</span>
@@ -81,6 +94,12 @@ export default function Configuracoes() {
                   </TabsTrigger>
                 )}
               </TabsList>
+
+              {isAdminMaster && (
+                <TabsContent value="integracoes">
+                  <IntegracoesTab />
+                </TabsContent>
+              )}
 
               <TabsContent value="ufms">
                 <ConfiguracoesUFMS />

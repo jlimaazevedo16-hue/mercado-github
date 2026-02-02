@@ -1,6 +1,8 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useSetupStatus } from '@/hooks/useSetupStatus';
+import { SetupRequired } from '@/components/setup/SetupRequired';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,11 +15,12 @@ export const ProtectedRoute = ({
   requiredPermission,
   requiredAction = 'view'
 }: ProtectedRouteProps) => {
+  const location = useLocation();
   const { session, loading: authLoading } = useAuth();
-  // Adicionamos o 'role' aqui, vindo do seu hook de permissões
   const { hasPermission, role, loading: roleLoading } = useUserRole();
+  const { setupConcluido, loading: setupLoading } = useSetupStatus();
 
-  if (authLoading || roleLoading) {
+  if (authLoading || roleLoading || setupLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -29,12 +32,16 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" replace />;
   }
 
-  // --- IMPLEMENTAÇÃO DA AÇÃO 2 ---
-  // Se for admin master, ignora qualquer outra restrição e libera o acesso
+  // Se for admin master, ignora verificação de setup para acessar configurações
   if (role === 'administrador_master') {
     return <>{children}</>;
   }
-  // -------------------------------
+
+  // Verificar se o setup foi concluído (exceto para a página de configurações)
+  const isConfigPage = location.pathname.startsWith('/configuracoes');
+  if (!setupConcluido && !isConfigPage) {
+    return <SetupRequired />;
+  }
 
   // Check permission if required
   if (requiredPermission && !hasPermission(requiredPermission, requiredAction)) {
