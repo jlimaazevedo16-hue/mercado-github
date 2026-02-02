@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_logs: {
+        Row: {
+          created_at: string
+          duracao_ms: number | null
+          id: string
+          metadata: Json | null
+          pergunta: string
+          resposta: string | null
+          tipo_consulta: string
+          tokens_usados: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duracao_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          pergunta: string
+          resposta?: string | null
+          tipo_consulta: string
+          tokens_usados?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duracao_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          pergunta?: string
+          resposta?: string | null
+          tipo_consulta?: string
+          tokens_usados?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
