@@ -8,6 +8,7 @@ import { UserRoleProvider } from "@/hooks/useUserRole";
 import { UFMSProvider } from "@/contexts/UFMSContext";
 import { SetupStatusProvider } from "@/hooks/useSetupStatus";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AssistenteButton } from "@/components/assistente/AssistenteButton";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <AssistenteButton />
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
