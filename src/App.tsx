@@ -19,7 +19,6 @@ import BoxFicha from "./pages/BoxFicha";
 import ResponsavelFicha from "./pages/ResponsavelFicha";
 import Responsaveis from "./pages/Responsaveis";
 import ObservatorioComerciazacao from "./pages/ObservatorioComerciazacao";
-import GestaoUsuarios from "./pages/GestaoUsuarios";
 import Notificacoes from "./pages/Notificacoes";
 import Pendencias from "./pages/Pendencias";
 import Configuracoes from "./pages/Configuracoes";
@@ -51,7 +50,6 @@ const App = () => (
                 <Route path="/responsaveis/:id" element={<ProtectedRoute requiredPermission="responsaveis"><ResponsavelFicha /></ProtectedRoute>} />
                 <Route path="/documentos" element={<ProtectedRoute requiredPermission="documentos"><Documentos /></ProtectedRoute>} />
                 <Route path="/observatorio" element={<ProtectedRoute requiredPermission="observatorio"><ObservatorioComerciazacao /></ProtectedRoute>} />
-                <Route path="/gestao-usuarios" element={<ProtectedRoute requiredPermission="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />
                 <Route path="/notificacoes" element={<ProtectedRoute requiredPermission="notificacoes"><Notificacoes /></ProtectedRoute>} />
                 <Route path="/pendencias" element={<ProtectedRoute requiredPermission="pendencias"><Pendencias /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="configuracoes"><Configuracoes /></ProtectedRoute>} />

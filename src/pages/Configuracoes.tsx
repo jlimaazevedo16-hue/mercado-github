@@ -9,8 +9,9 @@ import { SetoresManager } from "@/components/configuracoes/SetoresManager";
 import { InstituicaoConfig } from "@/components/configuracoes/InstituicaoConfig";
 import { BackupManager } from "@/components/configuracoes/BackupManager";
 import { EmailConfig } from "@/components/configuracoes/EmailConfig";
+import { GestaoUsuariosTab } from "@/components/configuracoes/GestaoUsuariosTab";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin, Mail } from "lucide-react";
+import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin, Mail, Users } from "lucide-react";
 
 export default function Configuracoes() {
   const [activeItem, setActiveItem] = useState("configuracoes");
@@ -30,7 +31,7 @@ export default function Configuracoes() {
               <div>
                 <h1 className="text-2xl font-bold">Configurações Administrativas</h1>
                 <p className="text-muted-foreground">
-                  Gerencie valores UFMS, fatores de cálculo, segmentos e extrações mensais
+                  Gerencie valores UFMS, fatores de cálculo, segmentos, usuários e extrações mensais
                 </p>
               </div>
             </div>
@@ -60,6 +61,13 @@ export default function Configuracoes() {
                   <span className="hidden sm:inline">Extração Mensal</span>
                   <span className="sm:hidden">Extração</span>
                 </TabsTrigger>
+                {isAdminMaster && (
+                  <TabsTrigger value="usuarios" className="gap-2">
+                    <Users className="h-4 w-4" />
+                    <span className="hidden sm:inline">Gestão de Usuários</span>
+                    <span className="sm:hidden">Usuários</span>
+                  </TabsTrigger>
+                )}
                 {isAdminMaster && (
                   <TabsTrigger value="email" className="gap-2">
                     <Mail className="h-4 w-4" />
@@ -93,6 +101,12 @@ export default function Configuracoes() {
               <TabsContent value="extracao">
                 <ExtracaoMensal />
               </TabsContent>
+
+              {isAdminMaster && (
+                <TabsContent value="usuarios">
+                  <GestaoUsuariosTab />
+                </TabsContent>
+              )}
 
               {isAdminMaster && (
                 <TabsContent value="email">

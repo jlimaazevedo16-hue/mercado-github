@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calculator, Calendar, DollarSign, MessageCircle, Menu, X, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calendar, DollarSign, MessageCircle, Menu, X, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -27,8 +27,7 @@ const menuItems = [
   { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
   { id: "financeiro", label: "Financeiro", icon: DollarSign, path: "/financeiro", permission: "financeiro" },
   { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, path: "/whatsapp", permission: "whatsapp" },
-  { id: "configuracoes", label: "Configurações", icon: Calculator, path: "/configuracoes", permission: "configuracoes" },
-  { id: "gestao-usuarios", label: "Gestão de Usuários", icon: Settings, path: "/gestao-usuarios", permission: "gestao_usuarios" },
+  { id: "configuracoes", label: "Configurações", icon: Settings, path: "/configuracoes", permission: "configuracoes" },
 ];
 
 export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
