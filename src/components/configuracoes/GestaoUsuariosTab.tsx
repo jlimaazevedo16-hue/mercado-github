@@ -165,18 +165,22 @@ export const GestaoUsuariosTab = () => {
     }
   });
 
-  // Update user role mutation
+  // Update user role mutation - uses edge function for proper permissions
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', userId);
+      // Use edge function to update role with service role key
+      const { data, error } = await supabase.functions.invoke('set-user-role', {
+        body: { user_id: userId, role: newRole }
+      });
       
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['users-management'] });
+    onSuccess: async (_, variables) => {
+      // Force immediate refetch to update UI
+      await queryClient.refetchQueries({ queryKey: ['users-management'] });
       logAction({
         action: 'UPDATE_USER_ROLE',
         tableName: 'user_roles',
@@ -186,6 +190,7 @@ export const GestaoUsuariosTab = () => {
       toast({ title: 'Perfil atualizado com sucesso' });
     },
     onError: (error) => {
+      console.error('Error updating role:', error);
       toast({ title: 'Erro ao atualizar perfil', description: String(error), variant: 'destructive' });
     }
   });
