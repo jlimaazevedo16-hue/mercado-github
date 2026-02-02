@@ -8,3 +8,24 @@ verify_jwt = false
 
 [functions.verificacao-cadastral]
 verify_jwt = false
+
+[functions.cpf-login]
+verify_jwt = false
+
+[functions.cpf-signup]
+verify_jwt = false
+
+[functions.system-backup]
+verify_jwt = false
+
+[functions.whatsapp-evolution]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.test-integration]
+verify_jwt = false
+
+[functions.save-integration]
+verify_jwt = false

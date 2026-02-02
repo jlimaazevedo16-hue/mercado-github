@@ -345,6 +345,48 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes_integracoes: {
+        Row: {
+          config_encrypted: string | null
+          config_public: Json | null
+          created_at: string
+          id: string
+          integracao: string
+          mensagem_erro: string | null
+          obrigatoria: boolean
+          ordem: number
+          status: Database["public"]["Enums"]["integration_status"]
+          ultima_verificacao: string | null
+          updated_at: string
+        }
+        Insert: {
+          config_encrypted?: string | null
+          config_public?: Json | null
+          created_at?: string
+          id?: string
+          integracao: string
+          mensagem_erro?: string | null
+          obrigatoria?: boolean
+          ordem?: number
+          status?: Database["public"]["Enums"]["integration_status"]
+          ultima_verificacao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config_encrypted?: string | null
+          config_public?: Json | null
+          created_at?: string
+          id?: string
+          integracao?: string
+          mensagem_erro?: string | null
+          obrigatoria?: boolean
+          ordem?: number
+          status?: Database["public"]["Enums"]["integration_status"]
+          ultima_verificacao?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           assunto: string
@@ -1480,6 +1522,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sistema_setup: {
+        Row: {
+          concluido_por: string | null
+          created_at: string
+          data_conclusao: string | null
+          id: string
+          setup_concluido: boolean
+          updated_at: string
+          versao_schema: string | null
+        }
+        Insert: {
+          concluido_por?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          id?: string
+          setup_concluido?: boolean
+          updated_at?: string
+          versao_schema?: string | null
+        }
+        Update: {
+          concluido_por?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          id?: string
+          setup_concluido?: boolean
+          updated_at?: string
+          versao_schema?: string | null
+        }
+        Relationships: []
+      }
       system_backups: {
         Row: {
           arquivo_url: string | null
@@ -2270,6 +2342,7 @@ export type Database = {
         | "DEVOLVIDO"
         | "INTERDITADO"
       infraction_classification: "leve" | "media" | "grave" | "gravissima"
+      integration_status: "not_configured" | "testing" | "configured" | "error"
       notification_type: "interna" | "externa"
       pad_status:
         | "autuacao"
@@ -2422,6 +2495,7 @@ export const Constants = {
         "INTERDITADO",
       ],
       infraction_classification: ["leve", "media", "grave", "gravissima"],
+      integration_status: ["not_configured", "testing", "configured", "error"],
       notification_type: ["interna", "externa"],
       pad_status: [
         "autuacao",

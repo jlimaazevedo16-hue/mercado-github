@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { UserRoleProvider } from "@/hooks/useUserRole";
 import { UFMSProvider } from "@/contexts/UFMSContext";
+import { SetupStatusProvider } from "@/hooks/useSetupStatus";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -33,35 +34,37 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <UserRoleProvider>
-        <UFMSProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/boxes" element={<ProtectedRoute requiredPermission="boxes"><Index /></ProtectedRoute>} />
-                <Route path="/almoxarifado" element={<ProtectedRoute requiredPermission="almoxarifado"><Almoxarifado /></ProtectedRoute>} />
-                <Route path="/planta-baixa" element={<ProtectedRoute requiredPermission="planta_baixa"><PlantaBaixa /></ProtectedRoute>} />
-                <Route path="/boxes/:id" element={<ProtectedRoute requiredPermission="boxes"><BoxFicha /></ProtectedRoute>} />
-                <Route path="/responsaveis" element={<ProtectedRoute requiredPermission="responsaveis"><Responsaveis /></ProtectedRoute>} />
-                <Route path="/responsaveis/:id" element={<ProtectedRoute requiredPermission="responsaveis"><ResponsavelFicha /></ProtectedRoute>} />
-                <Route path="/documentos" element={<ProtectedRoute requiredPermission="documentos"><Documentos /></ProtectedRoute>} />
-                <Route path="/observatorio" element={<ProtectedRoute requiredPermission="observatorio"><ObservatorioComerciazacao /></ProtectedRoute>} />
-                <Route path="/notificacoes" element={<ProtectedRoute requiredPermission="notificacoes"><Notificacoes /></ProtectedRoute>} />
-                <Route path="/pendencias" element={<ProtectedRoute requiredPermission="pendencias"><Pendencias /></ProtectedRoute>} />
-                <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="configuracoes"><Configuracoes /></ProtectedRoute>} />
-                <Route path="/frequencia" element={<ProtectedRoute requiredPermission="frequencia"><Frequencia /></ProtectedRoute>} />
-                <Route path="/financeiro" element={<ProtectedRoute requiredPermission="configuracoes"><DashboardFinanceiro /></ProtectedRoute>} />
-                <Route path="/whatsapp" element={<ProtectedRoute requiredPermission="whatsapp"><WhatsApp /></ProtectedRoute>} />
-                <Route path="/verificacao/:token" element={<VerificacaoCadastral />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </UFMSProvider>
+        <SetupStatusProvider>
+          <UFMSProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/boxes" element={<ProtectedRoute requiredPermission="boxes"><Index /></ProtectedRoute>} />
+                  <Route path="/almoxarifado" element={<ProtectedRoute requiredPermission="almoxarifado"><Almoxarifado /></ProtectedRoute>} />
+                  <Route path="/planta-baixa" element={<ProtectedRoute requiredPermission="planta_baixa"><PlantaBaixa /></ProtectedRoute>} />
+                  <Route path="/boxes/:id" element={<ProtectedRoute requiredPermission="boxes"><BoxFicha /></ProtectedRoute>} />
+                  <Route path="/responsaveis" element={<ProtectedRoute requiredPermission="responsaveis"><Responsaveis /></ProtectedRoute>} />
+                  <Route path="/responsaveis/:id" element={<ProtectedRoute requiredPermission="responsaveis"><ResponsavelFicha /></ProtectedRoute>} />
+                  <Route path="/documentos" element={<ProtectedRoute requiredPermission="documentos"><Documentos /></ProtectedRoute>} />
+                  <Route path="/observatorio" element={<ProtectedRoute requiredPermission="observatorio"><ObservatorioComerciazacao /></ProtectedRoute>} />
+                  <Route path="/notificacoes" element={<ProtectedRoute requiredPermission="notificacoes"><Notificacoes /></ProtectedRoute>} />
+                  <Route path="/pendencias" element={<ProtectedRoute requiredPermission="pendencias"><Pendencias /></ProtectedRoute>} />
+                  <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="configuracoes"><Configuracoes /></ProtectedRoute>} />
+                  <Route path="/frequencia" element={<ProtectedRoute requiredPermission="frequencia"><Frequencia /></ProtectedRoute>} />
+                  <Route path="/financeiro" element={<ProtectedRoute requiredPermission="configuracoes"><DashboardFinanceiro /></ProtectedRoute>} />
+                  <Route path="/whatsapp" element={<ProtectedRoute requiredPermission="whatsapp"><WhatsApp /></ProtectedRoute>} />
+                  <Route path="/verificacao/:token" element={<VerificacaoCadastral />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </UFMSProvider>
+        </SetupStatusProvider>
       </UserRoleProvider>
     </AuthProvider>
   </QueryClientProvider>
