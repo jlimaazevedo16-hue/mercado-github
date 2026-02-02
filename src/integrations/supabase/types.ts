@@ -1173,6 +1173,134 @@ export type Database = {
           },
         ]
       }
+      pendencia_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          observacao: string | null
+          pendencia_id: string
+          status_anterior:
+            | Database["public"]["Enums"]["pendencia_status"]
+            | null
+          status_novo: Database["public"]["Enums"]["pendencia_status"]
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          observacao?: string | null
+          pendencia_id: string
+          status_anterior?:
+            | Database["public"]["Enums"]["pendencia_status"]
+            | null
+          status_novo: Database["public"]["Enums"]["pendencia_status"]
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          observacao?: string | null
+          pendencia_id?: string
+          status_anterior?:
+            | Database["public"]["Enums"]["pendencia_status"]
+            | null
+          status_novo?: Database["public"]["Enums"]["pendencia_status"]
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pendencia_logs_pendencia_id_fkey"
+            columns: ["pendencia_id"]
+            isOneToOne: false
+            referencedRelation: "pendencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pendencias: {
+        Row: {
+          box_id: string | null
+          created_at: string
+          data_vencimento: string | null
+          descricao: string | null
+          documento_nome: string | null
+          documento_url: string | null
+          entidade_referencia_id: string | null
+          entidade_referencia_tipo: string | null
+          id: string
+          motivo_rejeicao: string | null
+          observacoes: string | null
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["pendencia_status"]
+          tipo: Database["public"]["Enums"]["pendencia_tipo"]
+          titulo: string
+          updated_at: string
+          urgencia: Database["public"]["Enums"]["pendencia_urgencia"]
+        }
+        Insert: {
+          box_id?: string | null
+          created_at?: string
+          data_vencimento?: string | null
+          descricao?: string | null
+          documento_nome?: string | null
+          documento_url?: string | null
+          entidade_referencia_id?: string | null
+          entidade_referencia_tipo?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["pendencia_status"]
+          tipo: Database["public"]["Enums"]["pendencia_tipo"]
+          titulo: string
+          updated_at?: string
+          urgencia?: Database["public"]["Enums"]["pendencia_urgencia"]
+        }
+        Update: {
+          box_id?: string | null
+          created_at?: string
+          data_vencimento?: string | null
+          descricao?: string | null
+          documento_nome?: string | null
+          documento_url?: string | null
+          entidade_referencia_id?: string | null
+          entidade_referencia_tipo?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["pendencia_status"]
+          tipo?: Database["public"]["Enums"]["pendencia_tipo"]
+          titulo?: string
+          updated_at?: string
+          urgencia?: Database["public"]["Enums"]["pendencia_urgencia"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pendencias_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pendencias_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean | null
@@ -2429,6 +2557,20 @@ export type Database = {
         | "recurso"
         | "decisao_final"
         | "arquivado"
+      pendencia_status:
+        | "PENDENTE"
+        | "EM_REGULARIZACAO"
+        | "EM_ANALISE"
+        | "REGULARIZADO"
+        | "REJEITADO"
+      pendencia_tipo:
+        | "notificacao"
+        | "certificado"
+        | "documento_ausente"
+        | "reforma"
+        | "processo"
+        | "ocorrencia"
+      pendencia_urgencia: "vencido" | "urgente" | "proximo" | "normal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2583,6 +2725,22 @@ export const Constants = {
         "decisao_final",
         "arquivado",
       ],
+      pendencia_status: [
+        "PENDENTE",
+        "EM_REGULARIZACAO",
+        "EM_ANALISE",
+        "REGULARIZADO",
+        "REJEITADO",
+      ],
+      pendencia_tipo: [
+        "notificacao",
+        "certificado",
+        "documento_ausente",
+        "reforma",
+        "processo",
+        "ocorrencia",
+      ],
+      pendencia_urgencia: ["vencido", "urgente", "proximo", "normal"],
     },
   },
 } as const
