@@ -573,6 +573,48 @@ export type Database = {
         }
         Relationships: []
       }
+      import_logs: {
+        Row: {
+          created_at: string
+          detalhes_erros: Json | null
+          duracao_segundos: number | null
+          id: string
+          linhas_erro: number | null
+          linhas_importadas: number | null
+          nome_arquivo: string
+          status: string | null
+          tipo_importacao: string
+          total_linhas: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detalhes_erros?: Json | null
+          duracao_segundos?: number | null
+          id?: string
+          linhas_erro?: number | null
+          linhas_importadas?: number | null
+          nome_arquivo: string
+          status?: string | null
+          tipo_importacao: string
+          total_linhas?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detalhes_erros?: Json | null
+          duracao_segundos?: number | null
+          id?: string
+          linhas_erro?: number | null
+          linhas_importadas?: number | null
+          nome_arquivo?: string
+          status?: string | null
+          tipo_importacao?: string
+          total_linhas?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       inventory_entries: {
         Row: {
           created_at: string
