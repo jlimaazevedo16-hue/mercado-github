@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calendar, DollarSign, MessageCircle, Menu, X, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, Settings, Warehouse, Map, BarChart3, AlertTriangle, Bell, Calendar, DollarSign, MessageCircle, Menu, X, ChevronLeft, FileSpreadsheet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -27,6 +27,7 @@ const menuItems = [
   { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
   { id: "financeiro", label: "Financeiro", icon: DollarSign, path: "/financeiro", permission: "financeiro" },
   { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, path: "/whatsapp", permission: "whatsapp" },
+  { id: "importacao", label: "Importação", icon: FileSpreadsheet, path: "/importacao", permission: "configuracoes", adminOnly: true },
   { id: "configuracoes", label: "Configurações", icon: Settings, path: "/configuracoes", permission: "configuracoes" },
 ];
 
@@ -62,8 +63,15 @@ export const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
     }
   };
 
-  // Filter menu items based on user permissions
-  const visibleMenuItems = menuItems.filter(item => hasPermission(item.permission, 'view'));
+  // Filter menu items based on user permissions and admin-only flag
+  const visibleMenuItems = menuItems.filter(item => {
+    const hasAccess = hasPermission(item.permission, 'view');
+    const isAdminOnlyItem = (item as { adminOnly?: boolean }).adminOnly;
+    if (isAdminOnlyItem) {
+      return hasAccess && (role === 'administrador_master' || role === 'administrador');
+    }
+    return hasAccess;
+  });
 
   const handleItemClick = (item: typeof menuItems[0]) => {
     onItemClick(item.id);
