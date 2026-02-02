@@ -106,11 +106,14 @@ export const GestaoUsuariosTab = () => {
       
       if (profilesError) throw profilesError;
 
-      const { data: rolesData, error: rolesError } = await (supabase
-        .from('user_roles_view' as any)
-        .select('user_id, role') as unknown as Promise<{ data: { user_id: string; role: AppRole }[] | null; error: any }>);
+      // Fetch roles directly from user_roles table
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
       
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+      }
 
       const usersWithRoles = (profilesData || []).map(profile => ({
         ...profile,
@@ -370,9 +373,16 @@ export const GestaoUsuariosTab = () => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="administrador_master">
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-3 w-3 text-amber-500" />
+                                  Administrador Master
+                                </div>
+                              </SelectItem>
                               <SelectItem value="administrador">Administrador</SelectItem>
                               <SelectItem value="fiscal">Fiscal</SelectItem>
                               <SelectItem value="funcionario">Funcionário</SelectItem>
+                              <SelectItem value="lojista">Lojista</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -442,9 +452,11 @@ export const GestaoUsuariosTab = () => {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="administrador_master">Admin Master</SelectItem>
                                 <SelectItem value="administrador">Administrador</SelectItem>
                                 <SelectItem value="fiscal">Fiscal</SelectItem>
                                 <SelectItem value="funcionario">Funcionário</SelectItem>
+                                <SelectItem value="lojista">Lojista</SelectItem>
                               </SelectContent>
                             </Select>
                           )}
