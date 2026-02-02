@@ -185,7 +185,11 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Building2 className="h-12 w-12 text-primary" />
+            <img 
+              src={logoAssociacao} 
+              alt="Logo da Associação" 
+              className="h-20 w-20 rounded-lg object-cover"
+            />
           </div>
           <CardTitle className="text-2xl">Mercado Municipal Digital</CardTitle>
           <CardDescription>Entre com seu email ou CPF para acessar o sistema</CardDescription>
