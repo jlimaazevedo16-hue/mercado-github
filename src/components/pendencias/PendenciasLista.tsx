@@ -334,7 +334,7 @@ export const PendenciasLista = () => {
           boxes (codigo, inquilino),
           responsaveis (nome)
         `)
-        .not('status', 'in', '("arquivado","decisao_final")');
+        .not('status', 'in', '(arquivado,decisao_final)');
 
       if (isLojistaView) {
         padsQuery = padsQuery.in('box_id', userBoxIds);
