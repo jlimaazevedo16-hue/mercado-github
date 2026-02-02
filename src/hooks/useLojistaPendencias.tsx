@@ -71,7 +71,7 @@ export const useLojistaPendencias = (): PendenciasResult => {
         .from("pads")
         .select("id, numero_processo, status, data_autuacao, box_id")
         .in("box_id", boxIds)
-        .not("status", "in", '("arquivado","decisao_final")');
+        .not("status", "in", "(arquivado,decisao_final)");
       if (error) throw error;
       return data || [];
     },
