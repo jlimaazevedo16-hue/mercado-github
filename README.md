@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
+# Mercado Municipal Digital
 
-## Project info
+Sistema de gestão para associações, mercados municipais e centros comerciais públicos.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## 🧩 Visão Geral
 
-There are several ways of editing your application.
+O Mercado Municipal Digital é um sistema web pensado como produto replicável, permitindo:
+- Gestão de boxes
+- Gestão de lojistas e responsáveis
+- Controle financeiro
+- Notificações
+- Documentos
+- Auditoria
+- Integrações (E-mail, WhatsApp, IA)
 
-**Use Lovable**
+Cada instalação utiliza seu próprio banco de dados Supabase.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Requisitos
 
-**Use your preferred IDE**
+- VPS (Linux)
+- Docker
+- EasyPanel (ou similar)
+- Conta Supabase
+- Conta GitHub
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 📦 Estrutura do Projeto
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+/src → Código frontend
+/supabase → Edge Functions e configurações
+/docs → Documentação
+.env.example → Exemplo de variáveis
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🔐 Variáveis de Ambiente
 
-**Use GitHub Codespaces**
+Criar um arquivo `.env` com:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## 🛠️ Instalação (Produção)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 1️⃣ Subir o projeto no GitHub
+- Criar repositório
+- Enviar todo o código
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### 2️⃣ Criar VPS
+- Instalar Docker
+- Instalar EasyPanel
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+### 3️⃣ Deploy no EasyPanel
+- Conectar repositório GitHub
+- Configurar variáveis de ambiente
+- Definir porta padrão
+- Executar deploy
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### 4️⃣ Supabase
+- Criar novo projeto Supabase
+- Copiar URL e ANON KEY
+- Informar no Setup Wizard inicial
+
+---
+
+## ⚙️ Primeira Configuração
+
+Ao acessar o sistema pela primeira vez:
+- O Setup Wizard será exibido automaticamente
+- O primeiro usuário criado será o USUÁRIO MASTER
+- O sistema só libera acesso após a conclusão
+
+---
+
+## 🔁 Atualizações
+
+- Atualizações são feitas via GitHub
+- Basta realizar `git push`
+- O sistema executa upgrades automáticos sem perder dados
+
+---
+
+## 🔒 Segurança
+
+- Apenas usuários MASTER acessam configurações críticas
+- Auditoria completa de ações
+- Dados isolados por cliente
+
+---
+
+## 📄 Licença
+
+Produto proprietário.
+Uso restrito conforme contrato.
