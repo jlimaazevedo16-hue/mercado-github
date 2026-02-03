@@ -1743,6 +1743,7 @@ export type Database = {
           master_users_count: number | null
           setup_concluido: boolean
           updated_at: string
+          versao_atual: string | null
           versao_schema: string | null
         }
         Insert: {
@@ -1753,6 +1754,7 @@ export type Database = {
           master_users_count?: number | null
           setup_concluido?: boolean
           updated_at?: string
+          versao_atual?: string | null
           versao_schema?: string | null
         }
         Update: {
@@ -1763,7 +1765,44 @@ export type Database = {
           master_users_count?: number | null
           setup_concluido?: boolean
           updated_at?: string
+          versao_atual?: string | null
           versao_schema?: string | null
+        }
+        Relationships: []
+      }
+      sistema_versoes: {
+        Row: {
+          aplicado_em: string | null
+          aplicado_por: string | null
+          changelog: string | null
+          created_at: string
+          data_lancamento: string | null
+          descricao: string | null
+          id: string
+          status: string | null
+          versao: string
+        }
+        Insert: {
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          changelog?: string | null
+          created_at?: string
+          data_lancamento?: string | null
+          descricao?: string | null
+          id?: string
+          status?: string | null
+          versao: string
+        }
+        Update: {
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          changelog?: string | null
+          created_at?: string
+          data_lancamento?: string | null
+          descricao?: string | null
+          id?: string
+          status?: string | null
+          versao?: string
         }
         Relationships: []
       }
@@ -2521,6 +2560,7 @@ export type Database = {
     Functions: {
       decrement_master_count: { Args: never; Returns: undefined }
       generate_notification_number: { Args: never; Returns: string }
+      get_current_version: { Args: never; Returns: string }
       get_master_users_count: { Args: never; Returns: number }
       get_user_permission: {
         Args: { _action?: string; _permission_key: string; _user_id: string }
