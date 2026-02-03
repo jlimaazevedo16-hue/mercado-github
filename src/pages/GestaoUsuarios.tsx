@@ -111,12 +111,14 @@ export default function GestaoUsuarios() {
       
       if (profilesError) throw profilesError;
 
-      // Fetch roles for all users from compatibility view
-      const { data: rolesData, error: rolesError } = await (supabase
-        .from('user_roles_view' as any)
-        .select('user_id, role') as unknown as Promise<{ data: { user_id: string; role: AppRole }[] | null; error: any }>);
+      // Fetch roles for all users from user_roles table
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
       
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+      }
 
       // Combine data
       const usersWithRoles = (profilesData || []).map(profile => ({
@@ -132,10 +134,10 @@ export default function GestaoUsuarios() {
   const { data: permissions = [], isLoading: loadingPermissions } = useQuery({
     queryKey: ['role-permissions'],
     queryFn: async () => {
-      const { data, error } = await (supabase
-        .from('role_permissions_view' as any)
+      const { data, error } = await supabase
+        .from('role_permissions')
         .select('*')
-        .order('role') as unknown as Promise<{ data: Permission[] | null; error: any }>);
+        .order('role');
       
       if (error) throw error;
       return (data || []) as Permission[];
@@ -171,18 +173,22 @@ export default function GestaoUsuarios() {
     }
   });
 
-  // Update user role mutation
+  // Update user role mutation - uses edge function for proper permissions
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', userId);
+      // Use edge function to update role with service role key
+      const { data, error } = await supabase.functions.invoke('set-user-role', {
+        body: { user_id: userId, role: newRole }
+      });
       
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['users-management'] });
+    onSuccess: async (_, variables) => {
+      // Force immediate refetch to update UI
+      await queryClient.refetchQueries({ queryKey: ['users-management'] });
       logAction({
         action: 'UPDATE_USER_ROLE',
         tableName: 'user_roles',
@@ -192,6 +198,7 @@ export default function GestaoUsuarios() {
       toast({ title: 'Perfil atualizado com sucesso' });
     },
     onError: (error) => {
+      console.error('Error updating role:', error);
       toast({ title: 'Erro ao atualizar perfil', description: String(error), variant: 'destructive' });
     }
   });
@@ -260,11 +267,10 @@ export default function GestaoUsuarios() {
       if (authError) throw authError;
 
       if (authData.user) {
-        // Update the role (the trigger creates a default role)
+        // Update or insert the role (using upsert to handle race conditions with trigger)
         await supabase
           .from('user_roles')
-          .update({ role: newUserData.role })
-          .eq('user_id', authData.user.id);
+          .upsert({ user_id: authData.user.id, role: newUserData.role }, { onConflict: 'user_id' });
 
         // Update the profile name
         await supabase
@@ -397,9 +403,16 @@ export default function GestaoUsuarios() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value="administrador_master">
+                                    <div className="flex items-center gap-2">
+                                      <Shield className="h-3 w-3 text-amber-500" />
+                                      Administrador Master
+                                    </div>
+                                  </SelectItem>
                                   <SelectItem value="administrador">Administrador</SelectItem>
                                   <SelectItem value="fiscal">Fiscal</SelectItem>
                                   <SelectItem value="funcionario">Funcionário</SelectItem>
+                                  <SelectItem value="lojista">Lojista</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -469,9 +482,11 @@ export default function GestaoUsuarios() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="administrador_master">Admin Master</SelectItem>
                                       <SelectItem value="administrador">Administrador</SelectItem>
                                       <SelectItem value="fiscal">Fiscal</SelectItem>
                                       <SelectItem value="funcionario">Funcionário</SelectItem>
+                                      <SelectItem value="lojista">Lojista</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 )}

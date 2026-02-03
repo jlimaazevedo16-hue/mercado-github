@@ -174,6 +174,15 @@ serve(async (req) => {
       // Não falhar, pois o trigger já deve ter criado o perfil
     }
 
+    // Atualizar role para lojista (usuários que se cadastram via CPF são lojistas)
+    const { error: roleError } = await admin
+      .from("user_roles")
+      .upsert({ user_id: authData.user.id, role: "lojista" }, { onConflict: "user_id" });
+
+    if (roleError) {
+      console.error("Role update error:", roleError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
