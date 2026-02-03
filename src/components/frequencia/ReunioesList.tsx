@@ -129,7 +129,7 @@ export const ReunioesList = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Reuniões e Assembleias</h2>
+        <h2 className="text-lg font-semibold">Assembleias</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>

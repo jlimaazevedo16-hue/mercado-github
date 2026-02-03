@@ -55,8 +55,8 @@ const Frequencia = () => {
               </h1>
               <p className="text-muted-foreground">
                 {isLojista 
-                  ? 'Acompanhe sua presença em reuniões e assembleias'
-                  : 'Gerencie reuniões, assembleias e controle a presença dos responsáveis'}
+                  ? 'Acompanhe sua presença nas assembleias'
+                  : 'Gerencie assembleias e controle a presença dos responsáveis'}
               </p>
             </div>
             {!isLojista && (
@@ -71,7 +71,7 @@ const Frequencia = () => {
               <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
                 <TabsTrigger value="reunioes" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Reuniões
+                  Assembleias
                 </TabsTrigger>
                 <TabsTrigger value="relatorios" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
