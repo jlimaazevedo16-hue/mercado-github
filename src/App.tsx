@@ -29,7 +29,7 @@ import DashboardFinanceiro from "./pages/DashboardFinanceiro";
 import WhatsApp from "./pages/WhatsApp";
 import Documentos from "./pages/Documentos";
 import Importacao from "./pages/Importacao";
-
+import Setup from "./pages/Setup";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -44,6 +44,7 @@ const App = () => (
               <BrowserRouter>
                 <AssistenteButton />
                 <Routes>
+                  <Route path="/setup" element={<Setup />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
