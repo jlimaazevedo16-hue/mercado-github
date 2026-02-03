@@ -17,13 +17,13 @@ export const FinancialDashboard = () => {
   // Use global UFMS context for real-time updates
   const { ufmsValor, fatorCondominio, fatorAluguel, taxaCondominio, isLoading: ufmsLoading } = useUFMS();
 
-  // Fetch boxes with area
+  // Fetch boxes with area and custom billing value
   const { data: boxes = [] } = useQuery({
     queryKey: ['financial-boxes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('boxes')
-        .select('id, codigo, setor, area_m2, status, responsavel_id');
+        .select('id, codigo, setor, area_m2, status, responsavel_id, valor_cobranca_customizado');
       if (error) throw error;
       return data || [];
     }
@@ -56,23 +56,37 @@ export const FinancialDashboard = () => {
     }
   });
 
-  // Calculate totals using global UFMS values
+  // Calculate totals using global UFMS values or custom billing values
   const boxesAtivos = boxes.filter(b => b.status === 'ASSINADO');
   const totalAreaM2 = boxesAtivos.reduce((acc, b) => acc + Number(b.area_m2 || 0), 0);
-  const totalCondominio = boxesAtivos.length * taxaCondominio;
-  const totalAluguel = totalAreaM2 * (ufmsValor * fatorAluguel);
-  const totalReceitaMensal = totalCondominio + totalAluguel;
+  
+  // Calculate per-box revenue: use custom value if set, otherwise UFMS calculation
+  const calcularReceitaBox = (box: typeof boxes[0]) => {
+    if (box.valor_cobranca_customizado != null && box.valor_cobranca_customizado > 0) {
+      return Number(box.valor_cobranca_customizado);
+    }
+    const area = Number(box.area_m2 || 0);
+    return taxaCondominio + (area * ufmsValor * fatorAluguel);
+  };
+
+  // Separate calculations for display
+  const boxesComValorCustomizado = boxesAtivos.filter(b => b.valor_cobranca_customizado != null && b.valor_cobranca_customizado > 0);
+  const boxesSemValorCustomizado = boxesAtivos.filter(b => b.valor_cobranca_customizado == null || b.valor_cobranca_customizado <= 0);
+  
+  const totalCondominio = boxesSemValorCustomizado.length * taxaCondominio;
+  const totalAluguel = boxesSemValorCustomizado.reduce((acc, b) => acc + (Number(b.area_m2 || 0) * ufmsValor * fatorAluguel), 0);
+  const totalValoresCustomizados = boxesComValorCustomizado.reduce((acc, b) => acc + Number(b.valor_cobranca_customizado || 0), 0);
+  const totalReceitaMensal = totalCondominio + totalAluguel + totalValoresCustomizados;
 
   // Calculate pending fines
   const totalMultasPendentes = pads
     .filter(p => p.status !== 'arquivado')
     .reduce((acc, p) => acc + Number(p.valor_multa || 0), 0);
 
-  // Revenue by sector
+  // Revenue by sector (using real billing values)
   const receitaPorSetor = boxesAtivos.reduce((acc, box) => {
     const setor = box.setor || 'Não definido';
-    const area = Number(box.area_m2 || 0);
-    const receita = taxaCondominio + (area * ufmsValor * fatorAluguel);
+    const receita = calcularReceitaBox(box);
     acc[setor] = (acc[setor] || 0) + receita;
     return acc;
   }, {} as Record<string, number>);
@@ -161,33 +175,41 @@ export const FinancialDashboard = () => {
                 <div className="text-2xl font-bold text-green-600">
                   R$ {totalReceitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
-                <p className="text-xs text-muted-foreground">Condomínio + Aluguel</p>
+                <p className="text-xs text-muted-foreground">
+                  {boxesComValorCustomizado.length > 0 
+                    ? `${boxesComValorCustomizado.length} box(es) com valor diferenciado`
+                    : 'Condomínio + Aluguel'}
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Condomínio</CardTitle>
+                <CardTitle className="text-sm font-medium">Receita UFMS</CardTitle>
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  R$ {totalCondominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {(totalCondominio + totalAluguel).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
-                <p className="text-xs text-muted-foreground">{boxesAtivos.length} boxes × R$ {taxaCondominio.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {boxesSemValorCustomizado.length} boxes × UFMS ({totalAreaM2.toFixed(2)} m²)
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Aluguel</CardTitle>
+                <CardTitle className="text-sm font-medium">Valores Diferenciados</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  R$ {totalAluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {totalValoresCustomizados.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
-                <p className="text-xs text-muted-foreground">{totalAreaM2.toFixed(2)} m² total</p>
+                <p className="text-xs text-muted-foreground">
+                  {boxesComValorCustomizado.length} boxes com valor fixo
+                </p>
               </CardContent>
             </Card>
 
