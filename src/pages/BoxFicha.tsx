@@ -32,6 +32,7 @@ import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 import { BoxLocationPicker } from "@/components/box/BoxLocationPicker";
 import { useBoxCodeGenerator } from "@/hooks/useBoxCodeGenerator";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUFMS } from "@/contexts/UFMSContext";
 
 
 const statusOptions = [
@@ -58,6 +59,7 @@ const BoxFicha = () => {
   const { generateCode } = useBoxCodeGenerator();
   const { role } = useUserRole();
   const isLojista = role === 'lojista';
+  const { ufmsValor, fatorAluguel, taxaCondominio, taxaAluguelM2 } = useUFMS();
   
 
   const { data: box, isLoading, isError, error } = useQuery({
@@ -719,11 +721,29 @@ const BoxFicha = () => {
                           Configuração de Cobrança
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Valor Calculado (m² × Setor)</Label>
-                            <p className="text-sm font-medium">
+                      <CardContent className="space-y-4">
+                        {/* Comparison Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* UFMS Suggested Value */}
+                          <div className="p-4 bg-muted/30 rounded-lg border border-dashed">
+                            <Label className="text-xs text-muted-foreground">Valor Sugerido (UFMS)</Label>
+                            <p className="text-xl font-bold text-muted-foreground">
+                              R$ {(() => {
+                                const area = Number(formData.area_m2 || box?.area_m2 || 0);
+                                const valorUFMS = taxaCondominio + (area * ufmsValor * fatorAluguel);
+                                return valorUFMS.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                              })()}
+                            </p>
+                            <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                              <p>Condomínio: R$ {taxaCondominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              <p>Aluguel: {Number(formData.area_m2 || box?.area_m2 || 0).toFixed(2)} m² × R$ {taxaAluguelM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²</p>
+                            </div>
+                          </div>
+
+                          {/* Real Value (Sector) */}
+                          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                            <Label className="text-xs text-muted-foreground">Valor Cobrança Real (Setor)</Label>
+                            <p className="text-xl font-bold text-primary">
                               R$ {(() => {
                                 const area = Number(formData.area_m2 || box?.area_m2 || 0);
                                 const valorPorM2 = Number((box as any)?.setores?.valor_cobranca_padrao || 5);
@@ -731,37 +751,43 @@ const BoxFicha = () => {
                                 return Math.max(50, valorCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                               })()}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {(() => {
-                                const area = Number(formData.area_m2 || box?.area_m2 || 0);
-                                const valorPorM2 = Number((box as any)?.setores?.valor_cobranca_padrao || 5);
-                                return `${area.toFixed(2)} m² × R$ ${valorPorM2.toFixed(2)}/m² (mín. R$ 50)`;
-                              })()}
-                            </p>
-                          </div>
-                          <div>
-                            <Label>Valor Cobrança Diferenciado</Label>
-                            {isEditing || isNewBox ? (
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="50"
-                                placeholder="Usar cálculo padrão"
-                                value={formData.valor_cobranca_customizado || ""}
-                                onChange={(e) => setFormData({ ...formData, valor_cobranca_customizado: e.target.value })}
-                              />
-                            ) : (
-                              <p className="text-sm font-medium">
-                                {box?.valor_cobranca_customizado 
-                                  ? `R$ ${Number(box.valor_cobranca_customizado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                  : <span className="text-muted-foreground">Usando cálculo padrão</span>
-                                }
+                            <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                              <p>
+                                {(() => {
+                                  const area = Number(formData.area_m2 || box?.area_m2 || 0);
+                                  const valorPorM2 = Number((box as any)?.setores?.valor_cobranca_padrao || 5);
+                                  return `${area.toFixed(2)} m² × R$ ${valorPorM2.toFixed(2)}/m²`;
+                                })()}
                               </p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Deixe vazio para usar m² × valor do setor
-                            </p>
+                              <p className="text-muted-foreground/70">(mínimo R$ 50,00)</p>
+                            </div>
                           </div>
+                        </div>
+
+                        {/* Custom Value */}
+                        <div className="pt-3 border-t">
+                          <Label>Valor Cobrança Diferenciado</Label>
+                          {isEditing || isNewBox ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="50"
+                              placeholder="Usar cálculo padrão do setor"
+                              value={formData.valor_cobranca_customizado || ""}
+                              onChange={(e) => setFormData({ ...formData, valor_cobranca_customizado: e.target.value })}
+                              className="mt-1"
+                            />
+                          ) : (
+                            <p className="text-sm font-medium mt-1">
+                              {box?.valor_cobranca_customizado 
+                                ? `R$ ${Number(box.valor_cobranca_customizado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                : <span className="text-muted-foreground">Usando cálculo padrão do setor</span>
+                              }
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Se preenchido, substitui o valor calculado pelo setor
+                          </p>
                         </div>
                       </CardContent>
                     </Card>
