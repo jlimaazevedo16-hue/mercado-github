@@ -14,13 +14,14 @@ interface Setor {
   id: string;
   nome: string;
   mercado: string | null;
+  valor_cobranca_padrao: number | null;
 }
 
 export const SetoresManager = () => {
   const queryClient = useQueryClient();
-  const [newSetor, setNewSetor] = useState({ nome: "", mercado: "" });
+  const [newSetor, setNewSetor] = useState({ nome: "", mercado: "", valor_cobranca_padrao: "50.00" });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingData, setEditingData] = useState({ nome: "", mercado: "" });
+  const [editingData, setEditingData] = useState({ nome: "", mercado: "", valor_cobranca_padrao: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [setorToDelete, setSetorToDelete] = useState<Setor | null>(null);
@@ -38,19 +39,21 @@ export const SetoresManager = () => {
   });
 
   const addMutation = useMutation({
-    mutationFn: async (data: { nome: string; mercado: string }) => {
+    mutationFn: async (data: { nome: string; mercado: string; valor_cobranca_padrao: string }) => {
+      const valorCobranca = parseFloat(data.valor_cobranca_padrao) || 50;
       const { error } = await supabase
         .from("setores")
         .insert({ 
           nome: data.nome.toUpperCase().trim(),
-          mercado: data.mercado.toUpperCase().trim() || null
+          mercado: data.mercado.toUpperCase().trim() || null,
+          valor_cobranca_padrao: Math.max(50, valorCobranca) // Mínimo R$ 50,00
         });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["setores-manager"] });
       queryClient.invalidateQueries({ queryKey: ["setores-list"] });
-      setNewSetor({ nome: "", mercado: "" });
+      setNewSetor({ nome: "", mercado: "", valor_cobranca_padrao: "50.00" });
       setDialogOpen(false);
       toast.success("Setor adicionado!");
     },
@@ -60,12 +63,14 @@ export const SetoresManager = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, nome, mercado }: { id: string; nome: string; mercado: string }) => {
+    mutationFn: async ({ id, nome, mercado, valor_cobranca_padrao }: { id: string; nome: string; mercado: string; valor_cobranca_padrao: string }) => {
+      const valorCobranca = parseFloat(valor_cobranca_padrao) || 50;
       const { error } = await supabase
         .from("setores")
         .update({ 
           nome: nome.toUpperCase().trim(),
-          mercado: mercado.toUpperCase().trim() || null
+          mercado: mercado.toUpperCase().trim() || null,
+          valor_cobranca_padrao: Math.max(50, valorCobranca) // Mínimo R$ 50,00
         })
         .eq("id", id);
       if (error) throw error;
@@ -74,7 +79,7 @@ export const SetoresManager = () => {
       queryClient.invalidateQueries({ queryKey: ["setores-manager"] });
       queryClient.invalidateQueries({ queryKey: ["setores-list"] });
       setEditingId(null);
-      setEditingData({ nome: "", mercado: "" });
+      setEditingData({ nome: "", mercado: "", valor_cobranca_padrao: "" });
       toast.success("Setor atualizado!");
     },
     onError: (error: Error) => {
@@ -117,7 +122,11 @@ export const SetoresManager = () => {
 
   const handleEdit = (setor: Setor) => {
     setEditingId(setor.id);
-    setEditingData({ nome: setor.nome, mercado: setor.mercado || "" });
+    setEditingData({ 
+      nome: setor.nome, 
+      mercado: setor.mercado || "", 
+      valor_cobranca_padrao: String(setor.valor_cobranca_padrao || 50)
+    });
   };
 
   const handleUpdate = () => {
@@ -125,7 +134,8 @@ export const SetoresManager = () => {
     updateMutation.mutate({ 
       id: editingId, 
       nome: editingData.nome, 
-      mercado: editingData.mercado 
+      mercado: editingData.mercado,
+      valor_cobranca_padrao: editingData.valor_cobranca_padrao
     });
   };
 
@@ -175,10 +185,25 @@ export const SetoresManager = () => {
                   placeholder="Ex: ME"
                   value={newSetor.mercado}
                   onChange={(e) => setNewSetor({ ...newSetor, mercado: e.target.value })}
-                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                 />
                 <p className="text-xs text-muted-foreground">
                   Usado na geração automática de código do box (ex: ME-001)
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="valor_cobranca">Valor Cobrança (R$)</Label>
+                <Input
+                  id="valor_cobranca"
+                  type="number"
+                  step="0.01"
+                  min="50"
+                  placeholder="50.00"
+                  value={newSetor.valor_cobranca_padrao}
+                  onChange={(e) => setNewSetor({ ...newSetor, valor_cobranca_padrao: e.target.value })}
+                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Valor padrão para boxes deste setor (mínimo R$ 50,00)
                 </p>
               </div>
             </div>
@@ -205,6 +230,7 @@ export const SetoresManager = () => {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Prefixo</TableHead>
+                    <TableHead>Valor (R$)</TableHead>
                     <TableHead className="w-24">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -220,7 +246,7 @@ export const SetoresManager = () => {
                               if (e.key === "Enter") handleUpdate();
                               if (e.key === "Escape") {
                                 setEditingId(null);
-                                setEditingData({ nome: "", mercado: "" });
+                                setEditingData({ nome: "", mercado: "", valor_cobranca_padrao: "" });
                               }
                             }}
                             autoFocus
@@ -238,14 +264,36 @@ export const SetoresManager = () => {
                               if (e.key === "Enter") handleUpdate();
                               if (e.key === "Escape") {
                                 setEditingId(null);
-                                setEditingData({ nome: "", mercado: "" });
+                                setEditingData({ nome: "", mercado: "", valor_cobranca_padrao: "" });
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="font-mono bg-muted px-2 py-1 rounded text-sm">
+                            {setor.mercado || "-"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === setor.id ? (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="50"
+                            value={editingData.valor_cobranca_padrao}
+                            onChange={(e) => setEditingData({ ...editingData, valor_cobranca_padrao: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleUpdate();
+                              if (e.key === "Escape") {
+                                setEditingId(null);
+                                setEditingData({ nome: "", mercado: "", valor_cobranca_padrao: "" });
                               }
                             }}
                             onBlur={handleUpdate}
                           />
                         ) : (
-                          <span className="font-mono bg-muted px-2 py-1 rounded text-sm">
-                            {setor.mercado || "-"}
+                          <span className="font-medium">
+                            R$ {Number(setor.valor_cobranca_padrao || 50).toFixed(2)}
                           </span>
                         )}
                       </TableCell>
@@ -272,7 +320,7 @@ export const SetoresManager = () => {
                   ))}
                   {!setores?.length && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
                         Nenhum setor cadastrado
                       </TableCell>
                     </TableRow>

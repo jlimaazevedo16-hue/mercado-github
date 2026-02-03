@@ -1714,6 +1714,7 @@ export type Database = {
           mercado: string | null
           nome: string
           updated_at: string
+          valor_cobranca_padrao: number | null
         }
         Insert: {
           created_at?: string
@@ -1721,6 +1722,7 @@ export type Database = {
           mercado?: string | null
           nome: string
           updated_at?: string
+          valor_cobranca_padrao?: number | null
         }
         Update: {
           created_at?: string
@@ -1728,6 +1730,7 @@ export type Database = {
           mercado?: string | null
           nome?: string
           updated_at?: string
+          valor_cobranca_padrao?: number | null
         }
         Relationships: []
       }

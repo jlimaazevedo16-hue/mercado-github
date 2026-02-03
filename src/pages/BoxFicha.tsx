@@ -32,7 +32,7 @@ import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 import { BoxLocationPicker } from "@/components/box/BoxLocationPicker";
 import { useBoxCodeGenerator } from "@/hooks/useBoxCodeGenerator";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useUFMS } from "@/contexts/UFMSContext";
+
 
 const statusOptions = [
   "ASSINADO", "DISPONIVEL", "PROCESSO", "CANCELADO", 
@@ -58,7 +58,7 @@ const BoxFicha = () => {
   const { generateCode } = useBoxCodeGenerator();
   const { role } = useUserRole();
   const isLojista = role === 'lojista';
-  const { ufmsValor, fatorCondominio, fatorAluguel, taxaCondominio } = useUFMS();
+  
 
   const { data: box, isLoading, isError, error } = useQuery({
     queryKey: ["box", id],
@@ -74,7 +74,7 @@ const BoxFicha = () => {
         .select(`
           *,
           responsaveis(*),
-          setores(id, nome, mercado),
+          setores(id, nome, mercado, valor_cobranca_padrao),
           segmentos(id, nome)
         `)
         .eq("id", id)
@@ -722,16 +722,16 @@ const BoxFicha = () => {
                       <CardContent className="space-y-3">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-xs text-muted-foreground">Valor UFMS (calculado)</Label>
+                            <Label className="text-xs text-muted-foreground">Valor Padrão (Setor)</Label>
                             <p className="text-sm font-medium">
                               R$ {(() => {
-                                const area = Number(formData.area_m2 || box?.area_m2 || 0);
-                                const valorCalculado = taxaCondominio + (area * ufmsValor * fatorAluguel);
-                                return valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                                // O valor padrão vem do setor, mínimo R$ 50,00
+                                const valorSetor = Number((box as any)?.setores?.valor_cobranca_padrao || 50);
+                                return Math.max(50, valorSetor).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                               })()}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Cond: R$ {taxaCondominio.toFixed(2)} + Alug: {(Number(formData.area_m2 || box?.area_m2 || 0) * ufmsValor * fatorAluguel).toFixed(2)}
+                              Definido pelo setor (mín. R$ 50,00)
                             </p>
                           </div>
                           <div>
@@ -740,7 +740,8 @@ const BoxFicha = () => {
                               <Input
                                 type="number"
                                 step="0.01"
-                                placeholder="Usar valor UFMS"
+                                min="50"
+                                placeholder="Usar valor do setor"
                                 value={formData.valor_cobranca_customizado || ""}
                                 onChange={(e) => setFormData({ ...formData, valor_cobranca_customizado: e.target.value })}
                               />
@@ -748,12 +749,12 @@ const BoxFicha = () => {
                               <p className="text-sm font-medium">
                                 {box?.valor_cobranca_customizado 
                                   ? `R$ ${Number(box.valor_cobranca_customizado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                  : <span className="text-muted-foreground">Usando UFMS</span>
+                                  : <span className="text-muted-foreground">Usando valor do setor</span>
                                 }
                               </p>
                             )}
                             <p className="text-xs text-muted-foreground mt-1">
-                              Deixe vazio para usar o cálculo UFMS
+                              Deixe vazio para usar o valor do setor
                             </p>
                           </div>
                         </div>
