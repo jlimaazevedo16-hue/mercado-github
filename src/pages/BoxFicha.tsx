@@ -730,12 +730,13 @@ const BoxFicha = () => {
                             <p className="text-xl font-bold text-muted-foreground">
                               R$ {(() => {
                                 const area = Number(formData.area_m2 || box?.area_m2 || 0);
-                                const valorUFMS = taxaCondominio + (area * ufmsValor * fatorAluguel);
+                                // Fórmula: área × (taxaCondomínio + taxaAluguel)
+                                const valorUFMS = area * (taxaCondominio + taxaAluguelM2);
                                 return valorUFMS.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                               })()}
                             </p>
                             <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                              <p>Condomínio: R$ {taxaCondominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              <p>Condomínio: {Number(formData.area_m2 || box?.area_m2 || 0).toFixed(2)} m² × R$ {taxaCondominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²</p>
                               <p>Aluguel: {Number(formData.area_m2 || box?.area_m2 || 0).toFixed(2)} m² × R$ {taxaAluguelM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²</p>
                             </div>
                           </div>

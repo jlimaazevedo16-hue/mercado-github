@@ -29,7 +29,7 @@ export function UFMSCalculationPreview({
       <CardContent>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="p-4 bg-background rounded-lg border">
-            <p className="text-sm text-muted-foreground">Taxa de Condomínio Base</p>
+            <p className="text-sm text-muted-foreground">Taxa de Condomínio por m²</p>
             <p className="text-2xl font-bold text-primary">
               R$ {taxaCondominioBase.toFixed(2)}
             </p>
@@ -49,10 +49,10 @@ export function UFMSCalculationPreview({
           <div className="p-4 bg-background rounded-lg border">
             <p className="text-sm text-muted-foreground">Exemplo: Box 30m²</p>
             <p className="text-2xl font-bold text-primary">
-              R$ {(taxaAluguelM2 * 30 + taxaCondominioBase).toFixed(2)}
+              R$ {((taxaAluguelM2 + taxaCondominioBase) * 30).toFixed(2)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Aluguel + Condomínio mensal
+              30m² × (R$ {taxaCondominioBase.toFixed(2)} + R$ {taxaAluguelM2.toFixed(2)})
             </p>
           </div>
         </div>
