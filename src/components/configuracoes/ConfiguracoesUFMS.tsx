@@ -100,9 +100,10 @@ export function ConfiguracoesUFMS() {
       return { chave, oldValue, newValue: valor };
     },
     onSuccess: async (result) => {
-      // Invalidate all related caches and refresh global context
-      await invalidateAndRefetch();
+      // Invalidate all related caches including local query and refresh global context
+      await queryClient.invalidateQueries({ queryKey: ["configuracoes-ufms"] });
       await queryClient.invalidateQueries({ queryKey: ["ufms-historico"] });
+      await invalidateAndRefetch();
 
       // Log the action for audit
       logAction({

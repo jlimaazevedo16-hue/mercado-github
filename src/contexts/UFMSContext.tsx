@@ -41,8 +41,10 @@ export function UFMSProvider({ children }: { children: ReactNode }) {
       setLastUpdated(new Date());
       return data as Configuracao[];
     },
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
+    gcTime: 0, // Don't cache at all
     refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
   });
 
   const ufmsValor = configuracoes?.find(c => c.chave === 'ufms_valor')?.valor || 0;
@@ -57,15 +59,16 @@ export function UFMSProvider({ children }: { children: ReactNode }) {
   }, [refetch]);
 
   const invalidateAndRefetch = useCallback(async () => {
-    // Invalidate all related queries
+    // Invalidate all related queries including component-local ones
     await queryClient.invalidateQueries({ queryKey: ['ufms-configuracoes-global'] });
     await queryClient.invalidateQueries({ queryKey: ['configuracoes-administrativas'] });
+    await queryClient.invalidateQueries({ queryKey: ['configuracoes-ufms'] });
     await queryClient.invalidateQueries({ queryKey: ['financial-configs'] });
     await queryClient.invalidateQueries({ queryKey: ['financial-boxes'] });
     await queryClient.invalidateQueries({ queryKey: ['financial-pads'] });
     await queryClient.invalidateQueries({ queryKey: ['financial-extracoes'] });
     
-    // Force refetch
+    // Force refetch from server
     await refetch();
     setLastUpdated(new Date());
   }, [queryClient, refetch]);
