@@ -332,16 +332,19 @@ export const FinancialDashboard = () => {
                   <p className="text-xl font-bold">R$ {ufmsValor.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Fator Condomínio</p>
+                  <p className="text-sm text-muted-foreground">Taxa Condomínio (UFMS)</p>
                   <p className="text-xl font-bold">{fatorCondominio}x</p>
-                  <p className="text-xs text-muted-foreground">= R$ {taxaCondominio.toFixed(2)}/box</p>
+                  <p className="text-xs text-muted-foreground">= R$ {taxaCondominio.toFixed(2)}/m²</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Fator Aluguel</p>
+                  <p className="text-sm text-muted-foreground">Taxa Aluguel (UFMS)</p>
                   <p className="text-xl font-bold">{fatorAluguel}x</p>
                   <p className="text-xs text-muted-foreground">= R$ {(ufmsValor * fatorAluguel).toFixed(2)}/m²</p>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground mt-4 pt-3 border-t">
+                <strong>Nota:</strong> Os valores de receita acima são calculados pelo <strong>Valor Cobrança Real</strong> (m² × valor/m² do setor), não pela fórmula UFMS.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
