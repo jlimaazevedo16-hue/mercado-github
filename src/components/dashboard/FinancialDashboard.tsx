@@ -17,17 +17,20 @@ export const FinancialDashboard = () => {
   // Use global UFMS context for real-time updates
   const { ufmsValor, fatorCondominio, fatorAluguel, taxaCondominio, isLoading: ufmsLoading } = useUFMS();
 
-  // Fetch boxes with area and custom billing value
+  // Fetch boxes with area, custom billing value, and sector info
   const { data: boxes = [] } = useQuery({
     queryKey: ['financial-boxes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('boxes')
-        .select('id, codigo, setor, area_m2, status, responsavel_id, valor_cobranca_customizado');
+        .select('id, codigo, setor, setor_id, area_m2, status, responsavel_id, valor_cobranca_customizado, setores(id, nome, valor_cobranca_padrao)');
       if (error) throw error;
       return data || [];
     }
   });
+
+  // Minimum billing value
+  const VALOR_MINIMO = 50;
 
   // Fetch pending fines from PADs
   const { data: pads = [] } = useQuery({
@@ -56,27 +59,35 @@ export const FinancialDashboard = () => {
     }
   });
 
-  // Calculate totals using global UFMS values or custom billing values
+  // Calculate totals: custom value > sector value > minimum R$ 50
   const boxesAtivos = boxes.filter(b => b.status === 'ASSINADO');
   const totalAreaM2 = boxesAtivos.reduce((acc, b) => acc + Number(b.area_m2 || 0), 0);
   
-  // Calculate per-box revenue: use custom value if set, otherwise UFMS calculation
+  // Calculate per-box revenue: custom value > sector value > R$ 50
   const calcularReceitaBox = (box: typeof boxes[0]) => {
+    // 1. Se tem valor customizado no box, usa ele
     if (box.valor_cobranca_customizado != null && box.valor_cobranca_customizado > 0) {
-      return Number(box.valor_cobranca_customizado);
+      return Math.max(VALOR_MINIMO, Number(box.valor_cobranca_customizado));
     }
-    const area = Number(box.area_m2 || 0);
-    return taxaCondominio + (area * ufmsValor * fatorAluguel);
+    // 2. Senão, usa o valor do setor
+    const valorSetor = (box as any)?.setores?.valor_cobranca_padrao;
+    if (valorSetor != null && valorSetor > 0) {
+      return Math.max(VALOR_MINIMO, Number(valorSetor));
+    }
+    // 3. Fallback: valor mínimo
+    return VALOR_MINIMO;
   };
 
   // Separate calculations for display
   const boxesComValorCustomizado = boxesAtivos.filter(b => b.valor_cobranca_customizado != null && b.valor_cobranca_customizado > 0);
   const boxesSemValorCustomizado = boxesAtivos.filter(b => b.valor_cobranca_customizado == null || b.valor_cobranca_customizado <= 0);
   
-  const totalCondominio = boxesSemValorCustomizado.length * taxaCondominio;
-  const totalAluguel = boxesSemValorCustomizado.reduce((acc, b) => acc + (Number(b.area_m2 || 0) * ufmsValor * fatorAluguel), 0);
-  const totalValoresCustomizados = boxesComValorCustomizado.reduce((acc, b) => acc + Number(b.valor_cobranca_customizado || 0), 0);
-  const totalReceitaMensal = totalCondominio + totalAluguel + totalValoresCustomizados;
+  const totalValoresCustomizados = boxesComValorCustomizado.reduce((acc, b) => acc + Math.max(VALOR_MINIMO, Number(b.valor_cobranca_customizado || 0)), 0);
+  const totalValoresSetor = boxesSemValorCustomizado.reduce((acc, b) => {
+    const valorSetor = (b as any)?.setores?.valor_cobranca_padrao;
+    return acc + Math.max(VALOR_MINIMO, Number(valorSetor || VALOR_MINIMO));
+  }, 0);
+  const totalReceitaMensal = totalValoresCustomizados + totalValoresSetor;
 
   // Calculate pending fines
   const totalMultasPendentes = pads
@@ -107,14 +118,14 @@ export const FinancialDashboard = () => {
       Multas: Number(ext.valor_total_multas || 0)
     }));
 
-  // If no extractions, generate projected data
+  // If no extractions, generate projected data based on current billing
   const dadosMensaisExibir = dadosMensais.length > 0 ? dadosMensais : 
     Array.from({ length: 6 }, (_, i) => {
       const mes = subMonths(new Date(), 5 - i);
       return {
         mes: format(mes, 'MMM/yy', { locale: ptBR }),
-        Condomínio: totalCondominio,
-        Aluguel: totalAluguel,
+        Condomínio: totalValoresSetor,
+        Aluguel: totalValoresCustomizados,
         Multas: 0
       };
     });
@@ -185,15 +196,15 @@ export const FinancialDashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Receita UFMS</CardTitle>
+                <CardTitle className="text-sm font-medium">Receita por Setor</CardTitle>
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  R$ {(totalCondominio + totalAluguel).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {totalValoresSetor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {boxesSemValorCustomizado.length} boxes × UFMS ({totalAreaM2.toFixed(2)} m²)
+                  {boxesSemValorCustomizado.length} boxes usando valor do setor
                 </p>
               </CardContent>
             </Card>
