@@ -19,7 +19,7 @@ interface Setor {
 
 export const SetoresManager = () => {
   const queryClient = useQueryClient();
-  const [newSetor, setNewSetor] = useState({ nome: "", mercado: "", valor_cobranca_padrao: "50.00" });
+  const [newSetor, setNewSetor] = useState({ nome: "", mercado: "", valor_cobranca_padrao: "5.00" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState({ nome: "", mercado: "", valor_cobranca_padrao: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -40,20 +40,20 @@ export const SetoresManager = () => {
 
   const addMutation = useMutation({
     mutationFn: async (data: { nome: string; mercado: string; valor_cobranca_padrao: string }) => {
-      const valorCobranca = parseFloat(data.valor_cobranca_padrao) || 50;
+      const valorPorM2 = parseFloat(data.valor_cobranca_padrao) || 5;
       const { error } = await supabase
         .from("setores")
         .insert({ 
           nome: data.nome.toUpperCase().trim(),
           mercado: data.mercado.toUpperCase().trim() || null,
-          valor_cobranca_padrao: Math.max(50, valorCobranca) // Mínimo R$ 50,00
+          valor_cobranca_padrao: Math.max(0.01, valorPorM2) // Valor por m²
         });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["setores-manager"] });
       queryClient.invalidateQueries({ queryKey: ["setores-list"] });
-      setNewSetor({ nome: "", mercado: "", valor_cobranca_padrao: "50.00" });
+      setNewSetor({ nome: "", mercado: "", valor_cobranca_padrao: "5.00" });
       setDialogOpen(false);
       toast.success("Setor adicionado!");
     },
@@ -64,13 +64,13 @@ export const SetoresManager = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, nome, mercado, valor_cobranca_padrao }: { id: string; nome: string; mercado: string; valor_cobranca_padrao: string }) => {
-      const valorCobranca = parseFloat(valor_cobranca_padrao) || 50;
+      const valorPorM2 = parseFloat(valor_cobranca_padrao) || 5;
       const { error } = await supabase
         .from("setores")
         .update({ 
           nome: nome.toUpperCase().trim(),
           mercado: mercado.toUpperCase().trim() || null,
-          valor_cobranca_padrao: Math.max(50, valorCobranca) // Mínimo R$ 50,00
+          valor_cobranca_padrao: Math.max(0.01, valorPorM2) // Valor por m²
         })
         .eq("id", id);
       if (error) throw error;
@@ -191,19 +191,19 @@ export const SetoresManager = () => {
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="valor_cobranca">Valor Cobrança (R$)</Label>
+                <Label htmlFor="valor_cobranca">Valor por m² (R$)</Label>
                 <Input
                   id="valor_cobranca"
                   type="number"
                   step="0.01"
-                  min="50"
-                  placeholder="50.00"
+                  min="0.01"
+                  placeholder="Ex: 5.00"
                   value={newSetor.valor_cobranca_padrao}
                   onChange={(e) => setNewSetor({ ...newSetor, valor_cobranca_padrao: e.target.value })}
                   onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Valor padrão para boxes deste setor (mínimo R$ 50,00)
+                  Cobrança = Área m² × Valor. Mínimo cobrado: R$ 50,00
                 </p>
               </div>
             </div>
@@ -230,7 +230,7 @@ export const SetoresManager = () => {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Prefixo</TableHead>
-                    <TableHead>Valor (R$)</TableHead>
+                    <TableHead>Valor/m²</TableHead>
                     <TableHead className="w-24">Ações</TableHead>
                   </TableRow>
                 </TableHeader>

@@ -59,23 +59,22 @@ export const FinancialDashboard = () => {
     }
   });
 
-  // Calculate totals: custom value > sector value > minimum R$ 50
+  // Calculate totals: custom value > (area × valor_m2 do setor) > R$ 50 mínimo
   const boxesAtivos = boxes.filter(b => b.status === 'ASSINADO');
   const totalAreaM2 = boxesAtivos.reduce((acc, b) => acc + Number(b.area_m2 || 0), 0);
   
-  // Calculate per-box revenue: custom value > sector value > R$ 50
+  // Calculate per-box revenue: custom value > (m² × valor/m²) > R$ 50 minimum
   const calcularReceitaBox = (box: typeof boxes[0]) => {
-    // 1. Se tem valor customizado no box, usa ele
+    // 1. Se tem valor customizado no box, usa ele (mínimo R$ 50)
     if (box.valor_cobranca_customizado != null && box.valor_cobranca_customizado > 0) {
       return Math.max(VALOR_MINIMO, Number(box.valor_cobranca_customizado));
     }
-    // 2. Senão, usa o valor do setor
-    const valorSetor = (box as any)?.setores?.valor_cobranca_padrao;
-    if (valorSetor != null && valorSetor > 0) {
-      return Math.max(VALOR_MINIMO, Number(valorSetor));
-    }
-    // 3. Fallback: valor mínimo
-    return VALOR_MINIMO;
+    // 2. Calcula: área × valor/m² do setor
+    const area = Number(box.area_m2 || 0);
+    const valorPorM2 = Number((box as any)?.setores?.valor_cobranca_padrao || 5);
+    const valorCalculado = area * valorPorM2;
+    // 3. Aplica mínimo de R$ 50
+    return Math.max(VALOR_MINIMO, valorCalculado);
   };
 
   // Separate calculations for display
@@ -84,8 +83,9 @@ export const FinancialDashboard = () => {
   
   const totalValoresCustomizados = boxesComValorCustomizado.reduce((acc, b) => acc + Math.max(VALOR_MINIMO, Number(b.valor_cobranca_customizado || 0)), 0);
   const totalValoresSetor = boxesSemValorCustomizado.reduce((acc, b) => {
-    const valorSetor = (b as any)?.setores?.valor_cobranca_padrao;
-    return acc + Math.max(VALOR_MINIMO, Number(valorSetor || VALOR_MINIMO));
+    const area = Number(b.area_m2 || 0);
+    const valorPorM2 = Number((b as any)?.setores?.valor_cobranca_padrao || 5);
+    return acc + Math.max(VALOR_MINIMO, area * valorPorM2);
   }, 0);
   const totalReceitaMensal = totalValoresCustomizados + totalValoresSetor;
 
