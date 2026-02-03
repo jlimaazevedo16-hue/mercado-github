@@ -722,26 +722,31 @@ const BoxFicha = () => {
                       <CardContent className="space-y-3">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-xs text-muted-foreground">Valor Padrão (Setor)</Label>
+                            <Label className="text-xs text-muted-foreground">Valor Calculado (m² × Setor)</Label>
                             <p className="text-sm font-medium">
                               R$ {(() => {
-                                // O valor padrão vem do setor, mínimo R$ 50,00
-                                const valorSetor = Number((box as any)?.setores?.valor_cobranca_padrao || 50);
-                                return Math.max(50, valorSetor).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                                const area = Number(formData.area_m2 || box?.area_m2 || 0);
+                                const valorPorM2 = Number((box as any)?.setores?.valor_cobranca_padrao || 5);
+                                const valorCalculado = area * valorPorM2;
+                                return Math.max(50, valorCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                               })()}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Definido pelo setor (mín. R$ 50,00)
+                              {(() => {
+                                const area = Number(formData.area_m2 || box?.area_m2 || 0);
+                                const valorPorM2 = Number((box as any)?.setores?.valor_cobranca_padrao || 5);
+                                return `${area.toFixed(2)} m² × R$ ${valorPorM2.toFixed(2)}/m² (mín. R$ 50)`;
+                              })()}
                             </p>
                           </div>
                           <div>
-                            <Label>Valor Cobrança Real</Label>
+                            <Label>Valor Cobrança Diferenciado</Label>
                             {isEditing || isNewBox ? (
                               <Input
                                 type="number"
                                 step="0.01"
                                 min="50"
-                                placeholder="Usar valor do setor"
+                                placeholder="Usar cálculo padrão"
                                 value={formData.valor_cobranca_customizado || ""}
                                 onChange={(e) => setFormData({ ...formData, valor_cobranca_customizado: e.target.value })}
                               />
@@ -749,12 +754,12 @@ const BoxFicha = () => {
                               <p className="text-sm font-medium">
                                 {box?.valor_cobranca_customizado 
                                   ? `R$ ${Number(box.valor_cobranca_customizado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                  : <span className="text-muted-foreground">Usando valor do setor</span>
+                                  : <span className="text-muted-foreground">Usando cálculo padrão</span>
                                 }
                               </p>
                             )}
                             <p className="text-xs text-muted-foreground mt-1">
-                              Deixe vazio para usar o valor do setor
+                              Deixe vazio para usar m² × valor do setor
                             </p>
                           </div>
                         </div>
