@@ -257,10 +257,10 @@ export const GestaoUsuariosTab = () => {
       if (authError) throw authError;
 
       if (authData.user) {
+        // Update or insert the role (using upsert to handle race conditions with trigger)
         await supabase
           .from('user_roles')
-          .update({ role: newUserData.role })
-          .eq('user_id', authData.user.id);
+          .upsert({ user_id: authData.user.id, role: newUserData.role }, { onConflict: 'user_id' });
 
         await supabase
           .from('profiles')
