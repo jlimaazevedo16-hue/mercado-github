@@ -63,12 +63,20 @@ export function ConfiguracoesUFMS() {
       if (updateHistoryError) throw updateHistoryError;
 
       // 2. Update the configuration value
-      const { error: updateConfigError } = await supabase
+      // NOTE: With RLS, PostgREST can return 204 even when 0 rows were affected.
+      // We force a SELECT to ensure the row was actually updated.
+      const { data: updatedRows, error: updateConfigError } = await supabase
         .from("configuracoes_administrativas")
         .update({ valor })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
 
       if (updateConfigError) throw updateConfigError;
+      if (!updatedRows || updatedRows.length === 0) {
+        throw new Error(
+          "Sem permissão para atualizar esta configuração. Confirme se seu usuário é Administrador Master e tente novamente."
+        );
+      }
 
       // 3. Get current values for history
       const { data: currentConfigs } = await supabase
