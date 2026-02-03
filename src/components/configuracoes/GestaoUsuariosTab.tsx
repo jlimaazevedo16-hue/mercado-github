@@ -128,10 +128,10 @@ export const GestaoUsuariosTab = () => {
   const { data: permissions = [], isLoading: loadingPermissions } = useQuery({
     queryKey: ['role-permissions'],
     queryFn: async () => {
-      const { data, error } = await (supabase
-        .from('role_permissions_view' as any)
+      const { data, error } = await supabase
+        .from('role_permissions')
         .select('*')
-        .order('role') as unknown as Promise<{ data: Permission[] | null; error: any }>);
+        .order('role');
       
       if (error) throw error;
       return (data || []) as Permission[];
