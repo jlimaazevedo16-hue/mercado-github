@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   ArrowLeft, Save, FileText, Wrench, History, Plus, 
-  Calendar, User, MapPin, Building2, Trash2, Edit2, AlertTriangle, MessageCircle, Wand2
+  Calendar, User, MapPin, Building2, Trash2, Edit2, AlertTriangle, MessageCircle, Wand2, DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -32,6 +32,7 @@ import { WhatsAppSendDialog } from "@/components/whatsapp/WhatsAppSendDialog";
 import { BoxLocationPicker } from "@/components/box/BoxLocationPicker";
 import { useBoxCodeGenerator } from "@/hooks/useBoxCodeGenerator";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUFMS } from "@/contexts/UFMSContext";
 
 const statusOptions = [
   "ASSINADO", "DISPONIVEL", "PROCESSO", "CANCELADO", 
@@ -57,6 +58,7 @@ const BoxFicha = () => {
   const { generateCode } = useBoxCodeGenerator();
   const { role } = useUserRole();
   const isLojista = role === 'lojista';
+  const { ufmsValor, fatorCondominio, fatorAluguel, taxaCondominio } = useUFMS();
 
   const { data: box, isLoading, isError, error } = useQuery({
     queryKey: ["box", id],
@@ -204,6 +206,7 @@ const BoxFicha = () => {
           status: data.status,
           responsavel_id: data.responsavel_id || null,
           imagem_url: data.imagem_url || null,
+          valor_cobranca_customizado: data.valor_cobranca_customizado ? parseFloat(data.valor_cobranca_customizado) : null,
         })
         .eq("id", id);
       
@@ -329,6 +332,7 @@ const BoxFicha = () => {
           imagem_url: data.imagem_url || null,
           pos_x: data.pos_x ?? null,
           pos_y: data.pos_y ?? null,
+          valor_cobranca_customizado: data.valor_cobranca_customizado ? parseFloat(data.valor_cobranca_customizado) : null,
         })
         .select()
         .single();
@@ -706,6 +710,55 @@ const BoxFicha = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Billing Configuration */}
+                    <Card className="border-dashed">
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Configuração de Cobrança
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Valor UFMS (calculado)</Label>
+                            <p className="text-sm font-medium">
+                              R$ {(() => {
+                                const area = Number(formData.area_m2 || box?.area_m2 || 0);
+                                const valorCalculado = taxaCondominio + (area * ufmsValor * fatorAluguel);
+                                return valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                              })()}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Cond: R$ {taxaCondominio.toFixed(2)} + Alug: {(Number(formData.area_m2 || box?.area_m2 || 0) * ufmsValor * fatorAluguel).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <Label>Valor Cobrança Real</Label>
+                            {isEditing || isNewBox ? (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="Usar valor UFMS"
+                                value={formData.valor_cobranca_customizado || ""}
+                                onChange={(e) => setFormData({ ...formData, valor_cobranca_customizado: e.target.value })}
+                              />
+                            ) : (
+                              <p className="text-sm font-medium">
+                                {box?.valor_cobranca_customizado 
+                                  ? `R$ ${Number(box.valor_cobranca_customizado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                  : <span className="text-muted-foreground">Usando UFMS</span>
+                                }
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Deixe vazio para usar o cálculo UFMS
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
                     <div>
                       <Label>Atividades</Label>

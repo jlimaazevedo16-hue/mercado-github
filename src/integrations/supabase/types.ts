@@ -247,6 +247,7 @@ export type Database = {
           setor_id: string | null
           status: Database["public"]["Enums"]["box_status"]
           updated_at: string
+          valor_cobranca_customizado: number | null
         }
         Insert: {
           area_m2?: number | null
@@ -267,6 +268,7 @@ export type Database = {
           setor_id?: string | null
           status?: Database["public"]["Enums"]["box_status"]
           updated_at?: string
+          valor_cobranca_customizado?: number | null
         }
         Update: {
           area_m2?: number | null
@@ -287,6 +289,7 @@ export type Database = {
           setor_id?: string | null
           status?: Database["public"]["Enums"]["box_status"]
           updated_at?: string
+          valor_cobranca_customizado?: number | null
         }
         Relationships: [
           {
