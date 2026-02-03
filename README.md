@@ -80,6 +80,27 @@ VITE_SUPABASE_ANON_KEY=
 
 ---
 
+## 🔌 Configuração de Portas
+
+### Portas Recomendadas
+
+| Serviço | Porta |
+|---------|-------|
+| Frontend (HTTP) | 3000 |
+| Frontend (HTTPS) | 443 |
+| Supabase | Externo |
+| EasyPanel | 3001 |
+| Evolution API | 8080 |
+
+### Boas Práticas
+
+- ✅ Sempre usar HTTPS em produção
+- ✅ Usar reverse proxy (Nginx/Traefik)
+- ✅ Uma porta por serviço
+- ✅ Variáveis separadas por ambiente
+
+---
+
 ## ⚙️ Primeira Configuração
 
 Ao acessar o sistema pela primeira vez:
@@ -89,11 +110,36 @@ Ao acessar o sistema pela primeira vez:
 
 ---
 
-## 🔁 Atualizações
+## 🔁 Política de Upgrade
 
-- Atualizações são feitas via GitHub
-- Basta realizar `git push`
-- O sistema executa upgrades automáticos sem perder dados
+### Princípios
+
+- 📌 **Dados do cliente são imutáveis** - nunca são perdidos
+- 📌 **Código pode evoluir** - atualizações contínuas
+- 📌 **Banco nunca é resetado** - migrações incrementais
+
+### Estratégia Técnica
+
+| Aspecto | Abordagem |
+|---------|-----------|
+| Versionamento | Controle de versão do schema |
+| Migrations | Incrementais e reversíveis |
+| Compatibilidade | Backward compatibility obrigatória |
+| Rollout | Feature flags quando necessário |
+
+### Proteções de Segurança
+
+- 🛡️ Bloqueio de comandos `DROP` destrutivos
+- 🛡️ Logs completos de upgrade
+- 🛡️ Rollback manual sempre possível
+
+### Quem Pode Atualizar
+
+Apenas usuários com role **MASTER** podem:
+- Executar atualizações do sistema
+- Acessar configurações críticas
+- Gerenciar integrações
+- Alterar parâmetros UFMS
 
 ---
 
@@ -102,6 +148,19 @@ Ao acessar o sistema pela primeira vez:
 - Apenas usuários MASTER acessam configurações críticas
 - Auditoria completa de ações
 - Dados isolados por cliente
+- RLS (Row Level Security) em todas as tabelas
+
+---
+
+## 📊 Hierarquia de Usuários
+
+| Role | Permissões |
+|------|------------|
+| `administrador_master` | Acesso total, gestão de masters, configurações |
+| `administrador` | Gestão operacional completa |
+| `fiscal` | Notificações, PADs, fiscalização |
+| `funcionario` | Operações básicas |
+| `lojista` | Acesso restrito ao próprio box |
 
 ---
 
