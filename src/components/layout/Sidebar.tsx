@@ -22,7 +22,7 @@ const menuItems = [
   { id: "documentos", label: "Documentos", icon: FileText, path: "/documentos", permission: "documentos" },
   { id: "pendencias", label: "Pendências", icon: Bell, path: "/pendencias", permission: "pendencias" },
   { id: "notificacoes", label: "Notificações/PAD", icon: AlertTriangle, path: "/notificacoes", permission: "notificacoes" },
-  { id: "frequencia", label: "Reuniões/Assembleias", icon: Calendar, path: "/frequencia", permission: "frequencia" },
+  { id: "frequencia", label: "Assembleias", icon: Calendar, path: "/frequencia", permission: "frequencia" },
   { id: "almoxarifado", label: "Almoxarifado", icon: Warehouse, path: "/almoxarifado", permission: "almoxarifado" },
   { id: "observatorio", label: "Observatório", icon: BarChart3, path: "/observatorio", permission: "observatorio" },
   { id: "financeiro", label: "Financeiro", icon: DollarSign, path: "/financeiro", permission: "financeiro" },
