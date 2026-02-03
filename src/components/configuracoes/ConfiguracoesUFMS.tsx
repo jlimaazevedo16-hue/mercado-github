@@ -108,9 +108,17 @@ export function ConfiguracoesUFMS() {
       return { chave, oldValue, newValue: valor };
     },
     onSuccess: async (result) => {
-      // Invalidate all related caches including local query and refresh global context
-      await queryClient.invalidateQueries({ queryKey: ["configuracoes-ufms"] });
-      await queryClient.invalidateQueries({ queryKey: ["ufms-historico"] });
+      // Invalidate all related caches and refresh global context
+      // Order matters: first invalidate local caches, then refresh the global context
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["configuracoes-ufms"] }),
+        queryClient.invalidateQueries({ queryKey: ["ufms-historico"] }),
+        queryClient.invalidateQueries({ queryKey: ["box"] }), // Force box ficha to refresh
+        queryClient.invalidateQueries({ queryKey: ["financial-boxes"] }),
+        queryClient.invalidateQueries({ queryKey: ["financial-configs"] }),
+      ]);
+      
+      // Force refetch the global UFMS context after cache invalidation
       await invalidateAndRefetch();
 
       // Log the action for audit
@@ -124,7 +132,7 @@ export function ConfiguracoesUFMS() {
 
       toast({ 
         title: "UFMS atualizada com sucesso",
-        description: "Os novos valores serão aplicados apenas a lançamentos futuros.",
+        description: "Os novos valores serão aplicados imediatamente em todas as telas.",
       });
       
       setShowConfirmation(false);
