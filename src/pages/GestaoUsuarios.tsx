@@ -18,7 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { UserPermissionsDialog } from "@/components/gestao-usuarios/UserPermissionsDialog";
-import { UserPlus, Shield, Users, History, Search, Settings2, Lock, AlertTriangle } from "lucide-react";
+import { PromoteMasterDialog } from "@/components/gestao-usuarios/PromoteMasterDialog";
+import { UserPlus, Shield, Users, History, Search, Settings2, Lock, AlertTriangle, Crown } from "lucide-react";
 
 type AppRole = 'administrador' | 'administrador_master' | 'fiscal' | 'funcionario' | 'lojista';
 
@@ -92,6 +93,8 @@ export default function GestaoUsuarios() {
     email: string;
     role: string;
   } | null>(null);
+  const [promoteMasterDialogOpen, setPromoteMasterDialogOpen] = useState(false);
+  const [userToPromote, setUserToPromote] = useState<{ user_id: string; nome: string; email: string } | null>(null);
   const [newUserData, setNewUserData] = useState({ nome: '', email: '', password: '', role: 'funcionario' as AppRole });
   
   const { toast } = useToast();
@@ -471,24 +474,41 @@ export default function GestaoUsuarios() {
                                     Admin Master
                                   </Badge>
                                 ) : (
-                                  <Select
-                                    value={user.user_roles?.[0]?.role || 'funcionario'}
-                                    onValueChange={(value: AppRole) => 
-                                      updateRoleMutation.mutate({ userId: user.user_id, newRole: value })
-                                    }
-                                    disabled={!isAdminMaster}
-                                  >
-                                    <SelectTrigger className="w-[140px]">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="administrador_master">Admin Master</SelectItem>
-                                      <SelectItem value="administrador">Administrador</SelectItem>
-                                      <SelectItem value="fiscal">Fiscal</SelectItem>
-                                      <SelectItem value="funcionario">Funcionário</SelectItem>
-                                      <SelectItem value="lojista">Lojista</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                  <div className="flex items-center gap-2">
+                                    <Select
+                                      value={user.user_roles?.[0]?.role || 'funcionario'}
+                                      onValueChange={(value: AppRole) => {
+                                        // If promoting to master, open confirmation dialog
+                                        if (value === 'administrador_master') {
+                                          setUserToPromote({
+                                            user_id: user.user_id,
+                                            nome: user.nome,
+                                            email: user.email,
+                                          });
+                                          setPromoteMasterDialogOpen(true);
+                                        } else {
+                                          updateRoleMutation.mutate({ userId: user.user_id, newRole: value });
+                                        }
+                                      }}
+                                      disabled={!isAdminMaster}
+                                    >
+                                      <SelectTrigger className="w-[140px]">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="administrador_master">
+                                          <div className="flex items-center gap-2">
+                                            <Crown className="h-3 w-3 text-amber-500" />
+                                            Admin Master
+                                          </div>
+                                        </SelectItem>
+                                        <SelectItem value="administrador">Administrador</SelectItem>
+                                        <SelectItem value="fiscal">Fiscal</SelectItem>
+                                        <SelectItem value="funcionario">Funcionário</SelectItem>
+                                        <SelectItem value="lojista">Lojista</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                 )}
                               </TableCell>
                               <TableCell>
@@ -679,6 +699,16 @@ export default function GestaoUsuarios() {
               open={isPermissionsDialogOpen}
               onOpenChange={setIsPermissionsDialogOpen}
               user={selectedUserForPermissions}
+            />
+
+            {/* Promote Master Dialog */}
+            <PromoteMasterDialog
+              open={promoteMasterDialogOpen}
+              onOpenChange={setPromoteMasterDialogOpen}
+              targetUser={userToPromote}
+              onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ['users-management'] });
+              }}
             />
           </div>
         </main>

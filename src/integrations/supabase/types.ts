@@ -1740,6 +1740,7 @@ export type Database = {
           created_at: string
           data_conclusao: string | null
           id: string
+          master_users_count: number | null
           setup_concluido: boolean
           updated_at: string
           versao_schema: string | null
@@ -1749,6 +1750,7 @@ export type Database = {
           created_at?: string
           data_conclusao?: string | null
           id?: string
+          master_users_count?: number | null
           setup_concluido?: boolean
           updated_at?: string
           versao_schema?: string | null
@@ -1758,6 +1760,7 @@ export type Database = {
           created_at?: string
           data_conclusao?: string | null
           id?: string
+          master_users_count?: number | null
           setup_concluido?: boolean
           updated_at?: string
           versao_schema?: string | null
@@ -2516,7 +2519,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_master_count: { Args: never; Returns: undefined }
       generate_notification_number: { Args: never; Returns: string }
+      get_master_users_count: { Args: never; Returns: number }
       get_user_permission: {
         Args: { _action?: string; _permission_key: string; _user_id: string }
         Returns: boolean
@@ -2536,7 +2541,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_master_count: { Args: never; Returns: undefined }
       is_admin_master: { Args: { _user_id: string }; Returns: boolean }
+      is_system_installed: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role:

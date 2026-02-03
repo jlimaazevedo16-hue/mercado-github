@@ -1,9 +1,9 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 interface SetupStatusContextType {
-  setupConcluido: boolean;
+  isInstalled: boolean;
+  masterUsersCount: number;
   loading: boolean;
   refetch: () => Promise<void>;
 }
@@ -11,33 +11,35 @@ interface SetupStatusContextType {
 const SetupStatusContext = createContext<SetupStatusContextType | undefined>(undefined);
 
 export const SetupStatusProvider = ({ children }: { children: ReactNode }) => {
-  const { session } = useAuth();
-  const [setupConcluido, setSetupConcluido] = useState(true); // Default true to avoid blocking
+  const [isInstalled, setIsInstalled] = useState(true); // Default true to avoid flash
+  const [masterUsersCount, setMasterUsersCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchSetupStatus = async () => {
-    if (!session) {
-      setLoading(false);
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from('sistema_setup')
-        .select('setup_concluido')
+        .select('setup_concluido, master_users_count')
         .limit(1)
         .maybeSingle();
 
       if (error) {
         console.error('Error fetching setup status:', error);
-        // Se tabela não existe ainda, consideramos como não configurado
-        setSetupConcluido(false);
+        // If table doesn't exist or error, assume not installed
+        setIsInstalled(false);
+        setMasterUsersCount(0);
+      } else if (data) {
+        setIsInstalled(data.setup_concluido ?? false);
+        setMasterUsersCount(data.master_users_count ?? 0);
       } else {
-        setSetupConcluido(data?.setup_concluido ?? false);
+        // No row exists, not installed
+        setIsInstalled(false);
+        setMasterUsersCount(0);
       }
     } catch (error) {
       console.error('Error in fetchSetupStatus:', error);
-      setSetupConcluido(false);
+      setIsInstalled(false);
+      setMasterUsersCount(0);
     } finally {
       setLoading(false);
     }
@@ -45,12 +47,13 @@ export const SetupStatusProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchSetupStatus();
-  }, [session]);
+  }, []);
 
   return (
     <SetupStatusContext.Provider 
       value={{ 
-        setupConcluido, 
+        isInstalled, 
+        masterUsersCount,
         loading,
         refetch: fetchSetupStatus
       }}
@@ -66,4 +69,10 @@ export const useSetupStatus = () => {
     throw new Error('useSetupStatus must be used within a SetupStatusProvider');
   }
   return context;
+};
+
+// Backward compatibility alias
+export const useSetupConcluido = () => {
+  const { isInstalled, loading } = useSetupStatus();
+  return { setupConcluido: isInstalled, loading };
 };
