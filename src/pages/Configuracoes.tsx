@@ -12,8 +12,9 @@ import { BackupManager } from "@/components/configuracoes/BackupManager";
 import { EmailConfig } from "@/components/configuracoes/EmailConfig";
 import { GestaoUsuariosTab } from "@/components/configuracoes/GestaoUsuariosTab";
 import { IntegracoesTab } from "@/components/configuracoes/IntegracoesTab";
+import { SistemaUpgrade } from "@/components/configuracoes/SistemaUpgrade";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin, Mail, Users, Plug } from "lucide-react";
+import { Settings, FileSpreadsheet, Calculator, Tag, Building2, Database, MapPin, Mail, Users, Plug, RefreshCw } from "lucide-react";
 
 export default function Configuracoes() {
   const [searchParams] = useSearchParams();
@@ -93,6 +94,13 @@ export default function Configuracoes() {
                     Backup
                   </TabsTrigger>
                 )}
+                {isAdminMaster && (
+                  <TabsTrigger value="upgrade" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    <span className="hidden sm:inline">Atualização</span>
+                    <span className="sm:hidden">Update</span>
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               {isAdminMaster && (
@@ -136,6 +144,12 @@ export default function Configuracoes() {
               {isAdminMaster && (
                 <TabsContent value="backup">
                   <BackupManager />
+                </TabsContent>
+              )}
+
+              {isAdminMaster && (
+                <TabsContent value="upgrade">
+                  <SistemaUpgrade />
                 </TabsContent>
               )}
             </Tabs>
