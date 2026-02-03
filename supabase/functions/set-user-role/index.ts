@@ -70,15 +70,14 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    // ✅ Atualizar role do usuário alvo
-    const { error: updateError } = await supabaseAdmin
+    // ✅ Atualizar/Criar role do usuário alvo usando upsert
+    const { error: upsertError } = await supabaseAdmin
       .from("user_roles")
-      .update({ role })
-      .eq("user_id", user_id);
+      .upsert({ user_id, role }, { onConflict: 'user_id' });
 
-    if (updateError) {
-      console.log("Update error:", updateError);
-      throw updateError;
+    if (upsertError) {
+      console.log("Upsert error:", upsertError);
+      throw upsertError;
     }
     console.log("Role updated successfully for user:", user_id);
 
