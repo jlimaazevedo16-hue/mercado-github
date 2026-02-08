@@ -1,4 +1,4 @@
-# Etapa 1: build
+# 1. Build do projeto
 FROM node:20-alpine AS build
 
 WORKDIR /app
@@ -9,18 +9,13 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Etapa 2: nginx
+# 2. Servir com Nginx
 FROM nginx:alpine
 
-# Remove config padrão
 RUN rm /etc/nginx/conf.d/default.conf
-
-# Copia config custom
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copia arquivos buildados
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]
